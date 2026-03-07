@@ -54,7 +54,8 @@ const T = {
   textBody:     "#4A4A4A",
   textMeta:     "#6B6B6B",
   card:         "#FFFFFF",
-  blue:         "#3B6B9E",
+  indigo:       "#2D3561",   // brand dark indigo — title colour
+  blue:         "#3B6B9E",   // 8–10 Exemplar → World-Class
   blueLight:    "#5A8AB8",
   bluePale:     "#7AA4CC",
   stone:        "#8A8070",
@@ -475,11 +476,12 @@ function AgentReflection({ text, loading, error }) {
 }
 
 // ============================================================
-// PULSE WHEEL
+// PULSE WHEEL — tappable domain labels open a popup card
 // ============================================================
 
 function PulseWheel({ scores, size = 320 }) {
   const cx = size / 2, cy = size / 2, maxR = size * 0.37, n = DOMAINS.length;
+
   const getPoint = (i, s) => {
     const a = (i / n) * 2 * Math.PI - Math.PI / 2;
     const r = maxR * ((s ?? 5) / 10);
@@ -487,20 +489,43 @@ function PulseWheel({ scores, size = 320 }) {
   };
   const getLabelPoint = (i) => {
     const a = (i / n) * 2 * Math.PI - Math.PI / 2;
-    return { x: cx + maxR * 1.26 * Math.cos(a), y: cy + maxR * 1.26 * Math.sin(a) };
+    return { x: cx + maxR * 1.28 * Math.cos(a), y: cy + maxR * 1.28 * Math.sin(a) };
   };
-  const polygonPoints = DOMAINS.map((d, i) => { const p = getPoint(i, scores[d.key] ?? 5); return `${p.x},${p.y}`; }).join(" ");
+  const polygonPoints = DOMAINS.map((d, i) => {
+    const p = getPoint(i, scores[d.key] ?? 5);
+    return `${p.x},${p.y}`;
+  }).join(" ");
+
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ overflow: "visible" }}>
+      {/* Grid rings */}
       {[2,4,6,8,10].map(r => {
-        const pts = DOMAINS.map((_, i) => { const a = (i/n)*2*Math.PI-Math.PI/2; const rad = maxR*(r/10); return `${cx+rad*Math.cos(a)},${cy+rad*Math.sin(a)}`; }).join(" ");
+        const pts = DOMAINS.map((_, i) => {
+          const a = (i/n)*2*Math.PI - Math.PI/2;
+          const rad = maxR*(r/10);
+          return `${cx+rad*Math.cos(a)},${cy+rad*Math.sin(a)}`;
+        }).join(" ");
         return <polygon key={r} points={pts} fill="none" stroke="rgba(200,169,110,0.2)" strokeWidth="1" />;
       })}
-      {DOMAINS.map((_, i) => { const a = (i/n)*2*Math.PI-Math.PI/2; return <line key={i} x1={cx} y1={cy} x2={cx+maxR*Math.cos(a)} y2={cy+maxR*Math.sin(a)} stroke="rgba(200,169,110,0.2)" strokeWidth="1" />; })}
-      <polygon points={polygonPoints} fill="rgba(200,169,110,0.08)" stroke={T.gold} strokeWidth="1.5" strokeLinejoin="round" style={{ transition: "all 0.4s ease" }} />
-      {DOMAINS.map((d, i) => { const s = scores[d.key] ?? 5; const p = getPoint(i, s); return <circle key={d.key} cx={p.x} cy={p.y} r={4} fill={getTierColor(s)} stroke={T.bg} strokeWidth="1.5" />; })}
+      {/* Spokes */}
+      {DOMAINS.map((_, i) => {
+        const a = (i/n)*2*Math.PI - Math.PI/2;
+        return <line key={i} x1={cx} y1={cy} x2={cx+maxR*Math.cos(a)} y2={cy+maxR*Math.sin(a)} stroke="rgba(200,169,110,0.2)" strokeWidth="1" />;
+      })}
+      {/* Glow layer */}
+      <polygon points={polygonPoints} fill="none" stroke="rgba(220,175,60,0.22)" strokeWidth="7" strokeLinejoin="round" />
+      {/* Shape — brilliant gold */}
+      <polygon points={polygonPoints} fill="rgba(220,185,80,0.08)" stroke="#E8C040" strokeWidth="2.2" strokeLinejoin="round" style={{ transition: "all 0.4s ease", filter: "drop-shadow(0 0 5px rgba(240,200,60,0.55))" }} />
+      {/* Score dots */}
       {DOMAINS.map((d, i) => {
-        const lp = getLabelPoint(i); const s = scores[d.key] ?? 5;
+        const s = scores[d.key] ?? 5;
+        const p = getPoint(i, s);
+        return <circle key={d.key} cx={p.x} cy={p.y} r={4} fill={getTierColor(s)} stroke={T.bg} strokeWidth="1.5" />;
+      })}
+      {/* Labels */}
+      {DOMAINS.map((d, i) => {
+        const lp = getLabelPoint(i);
+        const s  = scores[d.key] ?? 5;
         return (
           <g key={d.key}>
             <text x={lp.x} y={lp.y - 7} textAnchor="middle" fill="#1A1A1A" fontSize="11" fontFamily={T.fontDisplay} fontWeight="600">{d.label}</text>
@@ -517,33 +542,80 @@ function PulseWheel({ scores, size = 320 }) {
 // DAILY HEAT CHECK — number tap with colour band guide
 // ============================================================
 
-function HeatScoreRow({ domain, value, onChange }) {
-  const nums = [0,1,2,3,4,5,6,7,8,9,10];
+// ============================================================
+// HOURGLASS PICKER — vertical stack, width tapers to 5, expands back
+// ============================================================
+
+function HourglassPicker({ domain, onSelect }) {
+  const numbers = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0];
+
+  // Width curve: max at 0 and 10, min at 5
+  // Uses a parabola: width = minW + (maxW - minW) * ((n-5)/5)^2
+  const minW = 38, maxW = 100;
+  const getWidth = (n) => {
+    const pct = Math.pow((n - 5) / 5, 2);
+    return Math.round(minW + (maxW - minW) * pct);
+  };
+
   return (
-    <div style={{ marginBottom: "14px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-        <span style={{ fontFamily: T.fontDisplay, fontSize: "16px", fontWeight: "600", color: T.text }}>{domain.label}</span>
-        {value !== null && (
-          <span style={{ fontFamily: T.fontDisplay, fontSize: "13px", color: getTierColor(value), fontWeight: "600" }}>
-            {getScaleEntry(value)?.tier}
-          </span>
-        )}
+    <div style={{ textAlign: "center" }}>
+      <div style={{ fontFamily: T.fontDisplay, fontSize: "13px", color: T.textMeta, fontStyle: "italic", marginBottom: "16px" }}>
+        {domain.description}
       </div>
-      <div style={{ display: "flex", gap: "4px" }}>
-        {nums.map(n => {
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
+        {numbers.map(n => {
           const col = getHeatColor(n);
-          const isSelected = value === n;
+          const w = getWidth(n);
+          const isThreshold = n === 5;
           return (
-            <button key={n} onClick={() => onChange(n)}
-              style={{
-                flex: 1, height: "36px", border: isSelected ? `2px solid ${col}` : "1px solid rgba(200,169,110,0.2)",
-                borderRadius: "4px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "12px", fontWeight: isSelected ? "700" : "400",
-                color: isSelected ? "#FFFFFF" : T.textMeta,
-                background: isSelected ? col : `${col}18`,
-                transition: "all 0.1s",
-              }}>
-              {n}
-            </button>
+            <div key={n} style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%" }}>
+              {/* left label */}
+              <div style={{ width: "32px", textAlign: "right", fontSize: "11px", color: isThreshold ? T.gold : T.textMeta, fontWeight: isThreshold ? "600" : "400", flexShrink: 0 }}>
+                {n}
+              </div>
+              {/* button */}
+              <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+                {isThreshold && (
+                  <div style={{ position: "absolute", marginTop: "-10px", fontSize: "8px", color: T.gold, letterSpacing: "0.15em", fontWeight: "600", pointerEvents: "none" }} />
+                )}
+                <button
+                  onClick={() => onSelect(n)}
+                  style={{
+                    width: `${w}%`,
+                    height: "30px",
+                    background: `${col}22`,
+                    border: `1px solid ${col}55`,
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    transition: "all 0.1s",
+                    outline: "none",
+                    position: "relative",
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = col;
+                    e.currentTarget.style.borderColor = col;
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = `${col}22`;
+                    e.currentTarget.style.borderColor = `${col}55`;
+                  }}
+                />
+              </div>
+              {/* right: tier label at anchor points */}
+              <div style={{ width: "72px", fontSize: "9px", color: col, letterSpacing: "0.08em", flexShrink: 0 }}>
+                {n === 10 ? "World-Class" :
+                 n === 9  ? "Exemplar" :
+                 n === 8  ? "Fluent" :
+                 n === 7  ? "Capable" :
+                 n === 6  ? "Functional" :
+                 n === 5  ? "— Threshold" :
+                 n === 4  ? "Friction" :
+                 n === 3  ? "Strain" :
+                 n === 2  ? "Crisis" :
+                 n === 1  ? "Emergency" :
+                            "Ground Zero"}
+              </div>
+            </div>
           );
         })}
       </div>
@@ -567,18 +639,39 @@ function WeekDots({ count, total = 7 }) {
 }
 
 // ============================================================
-// DAILY CHECK-IN VIEW
+// DAILY CHECK-IN VIEW — one domain at a time, hourglass picker
 // ============================================================
 
 function DailyCheckIn({ existing, onSave, onClose }) {
   const initScores = existing?.scores || Object.fromEntries(DOMAINS.map(d => [d.key, null]));
-  const [scores, setScores] = useState(initScores);
-  const [note, setNote] = useState(existing?.note || "");
-  const [saving, setSaving] = useState(false);
+  const [scores, setScores]       = useState(initScores);
+  const [activeDomain, setActiveDomain] = useState(
+    // Start on first unscored domain, or 0 if all scored (edit mode)
+    existing ? 0 : 0
+  );
+  const [note, setNote]           = useState(existing?.note || "");
+  const [saving, setSaving]       = useState(false);
+  const [showNote, setShowNote]   = useState(false);
 
   const scoredCount = DOMAINS.filter(d => scores[d.key] !== null).length;
-  const allScored = scoredCount === DOMAINS.length;
-  const avg = allScored ? calcAvg(Object.fromEntries(DOMAINS.map(d => [d.key, scores[d.key]]))) : null;
+  const allScored   = scoredCount === DOMAINS.length;
+  const avg         = allScored ? calcAvg(Object.fromEntries(DOMAINS.map(d => [d.key, scores[d.key]]))) : null;
+
+  function handleSelect(n) {
+    const key = DOMAINS[activeDomain].key;
+    const newScores = { ...scores, [key]: n };
+    setScores(newScores);
+
+    // Auto-advance to next unscored domain
+    const nextUnscoredIdx = DOMAINS.findIndex((d, i) => i > activeDomain && newScores[d.key] === null);
+    if (nextUnscoredIdx !== -1) {
+      setActiveDomain(nextUnscoredIdx);
+    } else {
+      // All scored — show note step
+      const allDone = DOMAINS.every(d => newScores[d.key] !== null);
+      if (allDone) setShowNote(true);
+    }
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -597,9 +690,11 @@ function DailyCheckIn({ existing, onSave, onClose }) {
   }
 
   const isEdit = !!existing;
+  const currentDomain = DOMAINS[activeDomain];
 
   return (
     <div>
+      {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "28px" }}>
         <button onClick={onClose} style={{ background: "none", border: `1px solid ${T.goldBorder}`, color: T.textMeta, padding: "7px 14px", borderRadius: "4px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em" }}>← BACK</button>
         <div>
@@ -612,54 +707,101 @@ function DailyCheckIn({ existing, onSave, onClose }) {
         </div>
       </div>
 
-      {/* Progress bar */}
+      {/* Progress */}
       <div style={{ marginBottom: "6px", display: "flex", justifyContent: "space-between" }}>
         <span style={{ fontSize: "10px", color: T.gold, letterSpacing: "0.12em", fontWeight: "600" }}>{scoredCount} OF 7</span>
         {avg && <span style={{ fontFamily: T.fontDisplay, fontSize: "14px", color: getTierColor(avg), fontWeight: "600" }}>{avg} · {getScaleEntry(avg)?.tier}</span>}
       </div>
-      <div style={{ height: "2px", background: "rgba(200,169,110,0.15)", borderRadius: "1px", marginBottom: "20px" }}>
+      <div style={{ height: "2px", background: "rgba(200,169,110,0.15)", borderRadius: "1px", marginBottom: "28px" }}>
         <div style={{ height: "100%", width: `${(scoredCount/7)*100}%`, background: T.gold, borderRadius: "1px", transition: "width 0.3s" }} />
       </div>
 
-      {/* Colour band legend */}
-      <div style={{ display: "flex", gap: "6px", marginBottom: "20px", flexWrap: "wrap" }}>
-        {HEAT_BANDS.slice().reverse().map(b => (
-          <div key={b.label} style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            <div style={{ width: "8px", height: "8px", borderRadius: "2px", background: b.color }} />
-            <span style={{ fontSize: "10px", color: T.textMeta, fontFamily: T.fontBody }}>{b.label}</span>
+      {!showNote ? (
+        <>
+          {/* Domain tab strip */}
+          <div style={{ display: "flex", gap: "6px", marginBottom: "28px", flexWrap: "wrap" }}>
+            {DOMAINS.map((d, i) => {
+              const s = scores[d.key];
+              const isActive = i === activeDomain;
+              const isScored = s !== null;
+              return (
+                <button key={d.key} onClick={() => setActiveDomain(i)}
+                  style={{
+                    padding: "7px 12px", borderRadius: "6px", cursor: "pointer",
+                    fontFamily: T.fontDisplay, fontSize: "13px", fontWeight: isActive ? "600" : "400",
+                    border: isActive ? `1px solid ${T.goldBorderHi}` : `1px solid ${T.goldBorder}`,
+                    background: isActive ? "rgba(200,169,110,0.1)" : T.card,
+                    color: isScored ? getTierColor(s) : isActive ? T.text : T.textMeta,
+                    transition: "all 0.15s",
+                  }}>
+                  {d.label}{isScored ? ` · ${s}` : ""}
+                </button>
+              );
+            })}
           </div>
-        ))}
-      </div>
 
-      <p style={{ fontSize: "12px", color: T.textMeta, fontStyle: "italic", marginBottom: "20px", fontFamily: T.fontDisplay }}>
-        Choose where you recognise yourself today.
-      </p>
-
-      {/* Domain rows */}
-      <div style={{ padding: "20px", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "12px", boxShadow: "0 1px 4px rgba(0,0,0,0.05)", marginBottom: "20px" }}>
-        {DOMAINS.map((d, i) => (
-          <div key={d.key}>
-            <HeatScoreRow domain={d} value={scores[d.key]} onChange={val => setScores(prev => ({ ...prev, [d.key]: val }))} />
-            {i < DOMAINS.length - 1 && <div style={{ borderBottom: "1px solid rgba(200,169,110,0.1)", margin: "6px 0 12px" }} />}
+          {/* Active domain hourglass */}
+          <div style={{ padding: "24px 20px 28px", background: T.card, border: `1px solid ${T.goldBorderHi}`, borderRadius: "12px", boxShadow: "0 2px 8px rgba(200,169,110,0.08)" }}>
+            <div style={{ textAlign: "center", marginBottom: "20px" }}>
+              <div style={{ fontFamily: T.fontDisplay, fontSize: "28px", fontWeight: "600", color: T.text, marginBottom: "2px" }}>
+                {currentDomain.label}
+              </div>
+              {scores[currentDomain.key] !== null && (
+                <div style={{ fontFamily: T.fontDisplay, fontSize: "16px", color: getTierColor(scores[currentDomain.key]), fontWeight: "500" }}>
+                  {scores[currentDomain.key]} · {getScaleEntry(scores[currentDomain.key])?.tier}
+                </div>
+              )}
+            </div>
+            <HourglassPicker domain={currentDomain} onSelect={handleSelect} />
           </div>
-        ))}
-      </div>
 
-      {/* Note */}
-      <div style={{ marginBottom: "28px" }}>
-        <SectionLabel>A NOTE FROM TODAY (optional)</SectionLabel>
-        <input type="text" value={note} onChange={e => setNote(e.target.value)} maxLength={80}
-          placeholder="a few words from today..."
-          style={{ width: "100%", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "8px", color: T.text, fontFamily: T.fontDisplay, fontSize: "15px", fontStyle: "italic", padding: "13px 16px", outline: "none" }}
-          onFocus={e => e.currentTarget.style.borderColor = T.goldBorderHi}
-          onBlur={e => e.currentTarget.style.borderColor = T.goldBorder} />
-      </div>
+          {/* If all scored but user is reviewing — show continue */}
+          {allScored && (
+            <button onClick={() => setShowNote(true)} style={{ ...{width: "100%", padding: "18px", background: T.gold, border: "none", color: "#FFFFFF", borderRadius: "8px", cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "19px", fontWeight: "500", letterSpacing: "0.06em"}, marginTop: "20px" }}>
+              Continue →
+            </button>
+          )}
+        </>
+      ) : (
+        /* Note + save step */
+        <div>
+          {/* Mini summary */}
+          <div style={{ padding: "20px", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "12px", marginBottom: "24px", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+              <SectionLabel>TODAY'S SCORES</SectionLabel>
+              <button onClick={() => setShowNote(false)} style={{ background: "none", border: "none", color: T.gold, fontSize: "10px", cursor: "pointer", fontFamily: T.fontBody, letterSpacing: "0.12em" }}>ADJUST →</button>
+            </div>
+            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+              {DOMAINS.map(d => (
+                <div key={d.key} style={{ padding: "6px 10px", background: `${getTierColor(scores[d.key])}18`, borderRadius: "5px", border: `1px solid ${getTierColor(scores[d.key])}44` }}>
+                  <div style={{ fontSize: "10px", color: T.textMeta }}>{d.label}</div>
+                  <div style={{ fontFamily: T.fontDisplay, fontSize: "18px", fontWeight: "700", color: getTierColor(scores[d.key]), lineHeight: 1 }}>{scores[d.key]}</div>
+                </div>
+              ))}
+            </div>
+            {avg && (
+              <div style={{ marginTop: "14px", paddingTop: "12px", borderTop: "1px solid rgba(200,169,110,0.2)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: "11px", color: T.textMeta }}>Overall</span>
+                <span style={{ fontFamily: T.fontDisplay, fontSize: "22px", fontWeight: "700", color: getTierColor(avg) }}>{avg} · {getScaleEntry(avg)?.tier}</span>
+              </div>
+            )}
+          </div>
 
-      <button onClick={handleSave} disabled={saving || !allScored}
-        style={{ width: "100%", padding: "18px", background: allScored ? T.gold : "rgba(200,169,110,0.3)", border: "none", color: "#FFFFFF", borderRadius: "8px", cursor: allScored && !saving ? "pointer" : "not-allowed", fontFamily: T.fontDisplay, fontSize: "19px", fontWeight: "500", letterSpacing: "0.06em" }}>
-        {saving ? "Saving..." : isEdit ? "Update Pulse" : "Log Pulse"}
-      </button>
-      {!allScored && <p style={{ textAlign: "center", fontSize: "11px", color: T.textMeta, marginTop: "8px", fontStyle: "italic" }}>{7 - scoredCount} domain{7 - scoredCount !== 1 ? "s" : ""} remaining</p>}
+          <div style={{ marginBottom: "28px" }}>
+            <SectionLabel>A NOTE FROM TODAY (optional)</SectionLabel>
+            <input type="text" value={note} onChange={e => setNote(e.target.value)} maxLength={80}
+              placeholder="a few words from today..."
+              style={{ width: "100%", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "8px", color: T.text, fontFamily: T.fontDisplay, fontSize: "15px", fontStyle: "italic", padding: "13px 16px", outline: "none" }}
+              onFocus={e => e.currentTarget.style.borderColor = T.goldBorderHi}
+              onBlur={e => e.currentTarget.style.borderColor = T.goldBorder} />
+          </div>
+
+          <button onClick={handleSave} disabled={saving}
+            style={{ width: "100%", padding: "18px", background: T.gold, border: "none", color: "#FFFFFF", borderRadius: "8px", cursor: saving ? "wait" : "pointer", fontFamily: T.fontDisplay, fontSize: "19px", fontWeight: "500", letterSpacing: "0.06em" }}>
+            {saving ? "Saving..." : isEdit ? "Update Pulse" : "Log Pulse"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -670,12 +812,20 @@ function DailyCheckIn({ existing, onSave, onClose }) {
 
 function HorizonScalePicker({ domain, value, onChange }) {
   const [expanded, setExpanded] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
   const selected = getScaleEntry(value);
   return (
-    <div style={{ marginBottom: "12px", border: `1px solid ${expanded ? T.goldBorderHi : T.goldBorder}`, borderRadius: "10px", overflow: "hidden", background: T.card, boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
+    <div style={{ marginBottom: "12px", border: `1px solid ${expanded ? T.goldBorderHi : T.goldBorder}`, borderRadius: "10px", overflow: "hidden", background: T.card, boxShadow: "0 1px 4px rgba(0,0,0,0.05)", position: "relative" }}>
       <div onClick={() => setExpanded(!expanded)} style={{ padding: "16px 20px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px" }}>
         <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: T.fontDisplay, fontSize: "19px", fontWeight: "600", color: T.text }}>{domain.label}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div style={{ fontFamily: T.fontDisplay, fontSize: "19px", fontWeight: "600", color: T.text }}>{domain.label}</div>
+            <button
+              onClick={e => { e.stopPropagation(); setShowInfo(!showInfo); }}
+              style={{ width: "18px", height: "18px", borderRadius: "50%", border: `1px solid ${T.goldBorder}`, background: showInfo ? T.indigo : "transparent", color: showInfo ? "#FFF" : T.textMeta, fontSize: "10px", cursor: "pointer", flexShrink: 0, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: T.fontBody, transition: "all 0.15s" }}>
+              i
+            </button>
+          </div>
           <div style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic", marginTop: "3px" }}>{domain.description}</div>
         </div>
         <div style={{ textAlign: "right", flexShrink: 0 }}>
@@ -687,6 +837,16 @@ function HorizonScalePicker({ domain, value, onChange }) {
           ) : <div style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic" }}>tap to assess</div>}
         </div>
       </div>
+
+      {/* Domain info popup */}
+      {showInfo && (
+        <div onClick={e => e.stopPropagation()}
+          style={{ margin: "0 16px 14px", padding: "14px 16px", background: `rgba(45,53,97,0.04)`, border: `1px solid rgba(45,53,97,0.15)`, borderLeft: `3px solid ${T.indigo}`, borderRadius: "8px" }}>
+          <div style={{ fontFamily: T.fontDisplay, fontSize: "15px", fontWeight: "600", color: T.indigo, marginBottom: "6px" }}>{domain.label}</div>
+          <div style={{ fontSize: "12px", color: T.textBody, lineHeight: 1.7, fontFamily: T.fontDisplay, fontStyle: "italic" }}>{domain.description}</div>
+          <button onClick={() => setShowInfo(false)} style={{ marginTop: "10px", background: "none", border: "none", color: T.indigo, fontSize: "9px", cursor: "pointer", padding: 0, fontFamily: T.fontBody, letterSpacing: "0.14em", opacity: 0.7 }}>CLOSE ×</button>
+        </div>
+      )}
       {value !== null && !expanded && (
         <div style={{ padding: "0 20px 14px", borderTop: "1px solid rgba(200,169,110,0.15)" }}>
           <p style={{ fontSize: "12px", color: T.textMeta, fontStyle: "italic", lineHeight: 1.6, margin: 0 }}>"{selected?.description}"</p>
@@ -934,8 +1094,15 @@ export default function App() {
       <div style={{ maxWidth: "680px", margin: "0 auto", padding: "44px 24px 120px" }}>
 
         {/* HEADER */}
-        <div style={{ marginBottom: "40px", borderBottom: `1px solid rgba(200,169,110,0.25)`, paddingBottom: "28px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <h1 style={{ fontFamily: T.fontDisplay, fontSize: "52px", fontWeight: "300", color: T.text, lineHeight: 1, letterSpacing: "-0.01em", margin: 0 }}>
+        <div style={{ marginBottom: "40px", borderBottom: `1px solid rgba(200,169,110,0.25)`, paddingBottom: "32px", textAlign: "center" }}>
+          <div style={{ marginBottom: "16px" }}>
+            <img
+              src="/logo.png"
+              alt="Life OS: Pulse"
+              style={{ width: "72px", height: "72px", objectFit: "contain" }}
+            />
+          </div>
+          <h1 style={{ fontFamily: T.fontDisplay, fontSize: "52px", fontWeight: "300", color: T.indigo, lineHeight: 1, letterSpacing: "-0.01em", margin: 0 }}>
             <span style={{ fontSize: "22px", fontWeight: "400", color: T.gold, letterSpacing: "0.01em" }}>Life OS: </span>Pulse
           </h1>
         </div>
@@ -957,16 +1124,24 @@ export default function App() {
               <SectionLabel>THE HORIZON SCALE</SectionLabel>
               {SCALE_BANDS.map(item => (
                 <div key={item.label}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0" }}>
-                    <span style={{ fontSize: "13px", color: item.color, fontFamily: T.fontDisplay, fontWeight: "500" }}>{item.label}</span>
-                    <span style={{ fontSize: "11px", color: T.textMeta }}>{item.range}</span>
-                  </div>
-                  {item.dividerAfter && (
-                    <div style={{ margin: "4px 0 2px" }}>
-                      <div style={{ borderTop: `2px solid rgba(200,169,110,0.45)` }} />
-                      <div style={{ fontSize: "9px", color: T.gold, letterSpacing: "0.18em", textAlign: "center", padding: "4px 0 2px", fontWeight: "600" }}>5 · VIABILITY THRESHOLD</div>
-                      <div style={{ borderTop: `2px solid rgba(200,169,110,0.45)` }} />
-                      <div style={{ fontSize: "10px", color: T.textMeta, fontStyle: "italic", textAlign: "center", padding: "4px 0 2px", fontFamily: T.fontDisplay }}>Below this line, important parts of life begin to suffer.</div>
+                  {item.dividerAfter ? (
+                    /* Threshold block — all content sandwiched between two gold rules */
+                    <div style={{ margin: "6px 0" }}>
+                      <div style={{ borderTop: "2px solid rgba(200,169,110,0.5)" }} />
+                      <div style={{ padding: "10px 0 8px", textAlign: "center" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px", padding: "0 2px" }}>
+                          <span style={{ fontSize: "13px", color: item.color, fontFamily: T.fontDisplay, fontWeight: "500" }}>{item.label}</span>
+                          <span style={{ fontSize: "11px", color: T.textMeta }}>{item.range}</span>
+                        </div>
+                        <div style={{ fontSize: "9px", color: T.gold, letterSpacing: "0.2em", fontWeight: "700", marginBottom: "4px" }}>5 · VIABILITY THRESHOLD</div>
+                        <div style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic", fontFamily: T.fontDisplay, lineHeight: 1.5 }}>Below this line, important parts of life begin to suffer.</div>
+                      </div>
+                      <div style={{ borderTop: "2px solid rgba(200,169,110,0.5)" }} />
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0" }}>
+                      <span style={{ fontSize: "13px", color: item.color, fontFamily: T.fontDisplay, fontWeight: "500" }}>{item.label}</span>
+                      <span style={{ fontSize: "11px", color: T.textMeta }}>{item.range}</span>
                     </div>
                   )}
                 </div>
