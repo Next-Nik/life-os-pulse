@@ -104,42 +104,14 @@ const DOMAINS = [
   { key: "outergame",     label: "Outer Game",   description: "How you show up in the world — presence, expression & public identity" },
 ];
 
-const BEHAVIOUR_SIGNALS = [
-  { key: "slept_well",      label: "Slept well",                    group: "body" },
-  { key: "moved",           label: "Moved my body",                 group: "body" },
-  { key: "nourished",       label: "Nourished well",                group: "body" },
-  { key: "depleted",        label: "Physically depleted",           group: "body" },
-  { key: "meaningful_work", label: "Meaningful work done",          group: "work" },
-  { key: "creative_output", label: "Creative output happened",      group: "work" },
-  { key: "avoided",         label: "Avoided something important",   group: "work" },
-  { key: "in_flow",         label: "In flow today",                 group: "work" },
-  { key: "connected",       label: "Connected with someone",        group: "relating" },
-  { key: "solitude",        label: "Time in solitude",              group: "relating" },
-  { key: "conflict",        label: "Conflict or tension present",   group: "relating" },
-  { key: "felt_seen",       label: "Felt seen today",               group: "relating" },
-  { key: "stillness",       label: "Stillness or reflection",       group: "inner" },
-  { key: "alive",           label: "Something felt alive today",    group: "inner" },
-  { key: "heavy",           label: "Carrying something heavy",      group: "inner" },
-  { key: "money_mind",      label: "Money on my mind",              group: "inner" },
-  { key: "nature",          label: "Time in nature",                group: "environment" },
-  { key: "overstimulated",  label: "Overstimulated / overwhelmed",  group: "environment" },
-  { key: "good_energy",     label: "Good energy in my environment", group: "environment" },
-];
 
-const SIGNAL_GROUPS = [
-  { label: "MOVEMENT & BODY", keys: ["slept_well","moved","nourished","depleted"] },
-  { label: "WORK & OUTPUT",   keys: ["meaningful_work","creative_output","avoided","in_flow"] },
-  { label: "CONNECTION",      keys: ["connected","solitude","conflict","felt_seen"] },
-  { label: "INNER",           keys: ["stillness","alive","heavy","money_mind"] },
-  { label: "ENVIRONMENT",     keys: ["nature","overstimulated","good_energy"] },
-];
 
 const SCALE_BANDS = [
-  { label: "Exemplar → World-Class", range: "8 – 10",   color: T.green  },
-  { label: "Capable → Fluent",       range: "6.5 – 7.5", color: T.gold  },
-  { label: "Functional → Plateau",   range: "5 – 6",    color: T.amber  },
-  { label: "Friction → Strain",      range: "3 – 4.5",  color: T.orange },
-  { label: "Crisis → Ground Zero",   range: "0 – 2.5",  color: T.red    },
+  { label: "Exemplar → World-Class", range: "8 – 10",   color: T.green,  dividerAfter: false },
+  { label: "Capable → Fluent",       range: "6.5 – 7.5", color: T.gold,  dividerAfter: false },
+  { label: "Functional → Plateau",   range: "5 – 6",    color: T.amber,  dividerAfter: true  },
+  { label: "Friction → Strain",      range: "3 – 4.5",  color: T.orange, dividerAfter: false },
+  { label: "Crisis → Ground Zero",   range: "0 – 2.5",  color: T.red,    dividerAfter: false },
 ];
 
 const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -283,11 +255,10 @@ function buildWeeklySynthesisPrompt(weeklyEntry, recentDailyEntries, previousWee
 
   const dailyLines = recentDailyEntries.length
     ? recentDailyEntries.map(e => {
-        const active = BEHAVIOUR_SIGNALS.filter(s => e.signals?.[s.key]).map(s => s.label);
-        const domainScores = e.scores ? DOMAINS.map(d => `${d.label} ${e.scores[d.key] ?? "—"}`).join(", ") : (e.energy ? `Energy: ${e.energy}/10` : "—");
-        return `${formatDate(e.date)} — ${domainScores} — Focus: ${DOMAINS.find(d => d.key === e.loudestDomain)?.label || "—"} — Signals: ${active.join(", ") || "none"} — "${e.note || e.word || ""}"`;
+        const domainScores = e.scores ? DOMAINS.map(d => `${d.label} ${e.scores[d.key] ?? "—"}`).join(", ") : "—";
+        return `${formatDate(e.date)} — ${domainScores}${e.note ? ` — "${e.note}"` : ""}`;
       }).join("\n")
-    : "No daily signals this week.";
+    : "No daily check-ins this week.";
 
   const historyLines = previousWeekly.slice(-2).map(h => {
     const a = calcAvg(h.scores);
@@ -300,7 +271,7 @@ Overall average: ${avg} (${avgEntry?.tier})
 DOMAIN SCORES:
 ${domainLines}
 
-DAILY SIGNALS THIS WEEK (${recentDailyEntries.length} entries):
+DAILY CHECK-INS THIS WEEK (${recentDailyEntries.length} entries):
 ${dailyLines}
 
 PREVIOUS WEEKS:
@@ -323,10 +294,10 @@ function buildMonthlyReflectionPrompt(weeklyHistory, dailyHistory) {
     return `${d.label}: ${vals.join(" → ")} (change: ${delta})`;
   }).join("\n");
 
-  const recentSignals = getRecentDailyEntries(dailyHistory, 30);
-  const signalCounts = {};
-  BEHAVIOUR_SIGNALS.forEach(s => { signalCounts[s.label] = recentSignals.filter(e => e.signals?.[s.key]).length; });
-  const topSignals = Object.entries(signalCounts).filter(([,c]) => c > 0).sort((a,b) => b[1]-a[1]).slice(0,6).map(([l,c]) => `${l}: ${c}x`).join(", ");
+  const recentNotes = getRecentDailyEntries(dailyHistory, 30)
+    .filter(e => e.note)
+    .map(e => `${formatDate(e.date)}: "${e.note}"`)
+    .join("\n") || "No daily notes this month.";
 
   return `MONTHLY REFLECTION — ${MONTH_NAMES[new Date().getMonth()]} ${new Date().getFullYear()}
 
@@ -336,8 +307,8 @@ ${avgTrend}
 DOMAIN MOVEMENT:
 ${domainTrends}
 
-TOP BEHAVIOUR SIGNALS THIS MONTH:
-${topSignals || "Insufficient data."}
+DAILY NOTES THIS MONTH:
+${recentNotes}
 
 Generate a monthly reflection. Look at the arc — what is shifting, what is holding, what patterns are visible across the month that weren't obvious week-to-week. Note significant domain correlations. If any domain has been persistently below 5, name it. End with one question or observation.`;
 }
@@ -608,18 +579,15 @@ function DailyDomainPicker({ domain, value, onChange }) {
 
 function DailyCheckIn({ onSave, onClose }) {
   const [scores, setScores] = useState(Object.fromEntries(DOMAINS.map(d => [d.key, null])));
-  const [loudestDomain, setLoudestDomain] = useState("");
   const [note, setNote] = useState("");
-  const [signals, setSignals] = useState({});
   const [saving, setSaving] = useState(false);
-  const toggleSignal = k => setSignals(prev => ({ ...prev, [k]: !prev[k] }));
   const scoredCount = DOMAINS.filter(d => scores[d.key] !== null).length;
   const allScored = scoredCount === DOMAINS.length;
-  const dailyAvg = allScored ? calcAvg(Object.fromEntries(DOMAINS.map(d => [d.key, scores[d.key] ?? 5]))) : null;
+  const dailyAvg = allScored ? calcAvg(Object.fromEntries(DOMAINS.map(d => [d.key, scores[d.key]]))) : null;
 
   async function handleSave() {
     setSaving(true);
-    await onSave({ date: new Date().toISOString(), type: "daily", scores, loudestDomain, note, signals });
+    await onSave({ date: new Date().toISOString(), type: "daily", scores, note });
     setSaving(false);
   }
 
@@ -633,10 +601,10 @@ function DailyCheckIn({ onSave, onClose }) {
         </div>
       </div>
 
-      {/* Progress + avg */}
+      {/* Progress + live avg */}
       <div style={{ marginBottom: "20px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-          <span style={{ fontSize: "10px", color: T.gold, letterSpacing: "0.12em", fontWeight: "600" }}>{scoredCount} OF {DOMAINS.length} DOMAINS</span>
+          <span style={{ fontSize: "10px", color: T.gold, letterSpacing: "0.12em", fontWeight: "600" }}>{scoredCount} OF {DOMAINS.length}</span>
           {dailyAvg && <span style={{ fontFamily: T.fontDisplay, fontSize: "14px", color: getTierColor(parseFloat(dailyAvg)), fontWeight: "600" }}>{dailyAvg} · {getScaleEntry(parseFloat(dailyAvg))?.tier}</span>}
         </div>
         <div style={{ height: "2px", background: "rgba(200,169,110,0.15)", borderRadius: "1px" }}>
@@ -648,13 +616,12 @@ function DailyCheckIn({ onSave, onClose }) {
         Read the levels and choose the one that matches today.
       </p>
 
-      {/* 7 domain pickers */}
       {DOMAINS.map(d => (
         <DailyDomainPicker key={d.key} domain={d} value={scores[d.key]}
           onChange={val => setScores(prev => ({ ...prev, [d.key]: val }))} />
       ))}
 
-      <div style={{ marginTop: "24px", marginBottom: "20px" }}>
+      <div style={{ marginTop: "24px", marginBottom: "28px" }}>
         <SectionLabel>A NOTE FROM TODAY (optional)</SectionLabel>
         <input type="text" value={note} onChange={e => setNote(e.target.value)} maxLength={80}
           placeholder="scattered / present / something shifting..."
@@ -663,44 +630,9 @@ function DailyCheckIn({ onSave, onClose }) {
           onBlur={e => { e.currentTarget.style.borderColor = T.goldBorder; }} />
       </div>
 
-      {/* Loudest domain */}
-      <div style={{ marginBottom: "24px" }}>
-        <SectionLabel>WHAT DOMAIN IS LOUDEST TODAY? (optional)</SectionLabel>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-          {DOMAINS.map(d => (
-            <button key={d.key} onClick={() => setLoudestDomain(loudestDomain === d.key ? "" : d.key)}
-              style={{ padding: "10px 14px", background: loudestDomain === d.key ? "rgba(200,169,110,0.1)" : T.card, border: `1px solid ${loudestDomain === d.key ? T.goldBorderHi : T.goldBorder}`, borderRadius: "8px", color: loudestDomain === d.key ? T.text : T.textMeta, cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "14px", fontWeight: "600", textAlign: "left", transition: "all 0.15s" }}>
-              {d.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Behaviour signals */}
-      <div style={{ marginBottom: "32px" }}>
-        <SectionLabel>MARK WHAT APPLIES TODAY (optional)</SectionLabel>
-        {SIGNAL_GROUPS.map(group => (
-          <div key={group.label} style={{ marginBottom: "14px" }}>
-            <div style={{ fontSize: "9px", color: T.textMeta, letterSpacing: "0.15em", marginBottom: "8px" }}>{group.label}</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "7px" }}>
-              {group.keys.map(key => {
-                const sig = BEHAVIOUR_SIGNALS.find(s => s.key === key);
-                const active = signals[key];
-                return (
-                  <button key={key} onClick={() => toggleSignal(key)}
-                    style={{ padding: "7px 13px", background: active ? "rgba(200,169,110,0.12)" : T.card, border: `1px solid ${active ? T.goldBorderHi : T.goldBorder}`, borderRadius: "20px", color: active ? T.text : T.textMeta, cursor: "pointer", fontFamily: T.fontBody, fontSize: "12px", transition: "all 0.15s" }}>
-                    {sig?.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
-
       <button onClick={handleSave} disabled={saving}
         style={{ width: "100%", padding: "18px", background: T.gold, border: "none", color: "#FFFFFF", borderRadius: "8px", cursor: saving ? "wait" : "pointer", fontFamily: T.fontDisplay, fontSize: "19px", fontWeight: "500", letterSpacing: "0.06em", opacity: saving ? 0.6 : 1 }}>
-        {saving ? "Saving..." : "Log Today's Signal"}
+        {saving ? "Saving..." : "Log Pulse"}
       </button>
     </div>
   );
@@ -835,17 +767,27 @@ export default function App() {
             <div style={{ marginBottom: "28px", padding: "18px 22px", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "10px", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
               <SectionLabel>THE HORIZON SCALE</SectionLabel>
               {SCALE_BANDS.map(item => (
-                <div key={item.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid rgba(200,169,110,0.1)" }}>
-                  <span style={{ fontSize: "13px", color: item.color, fontFamily: T.fontDisplay, fontWeight: "500" }}>{item.label}</span>
-                  <span style={{ fontSize: "11px", color: T.textMeta }}>{item.range}</span>
+                <div key={item.label}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0" }}>
+                    <span style={{ fontSize: "13px", color: item.color, fontFamily: T.fontDisplay, fontWeight: "500" }}>{item.label}</span>
+                    <span style={{ fontSize: "11px", color: T.textMeta }}>{item.range}</span>
+                  </div>
+                  {item.dividerAfter && (
+                    <div style={{ margin: "4px 0 2px" }}>
+                      <div style={{ borderTop: `2px solid rgba(200,169,110,0.45)` }} />
+                      <div style={{ fontSize: "9px", color: T.gold, letterSpacing: "0.18em", textAlign: "center", padding: "4px 0 2px", fontWeight: "600" }}>5 · VIABILITY THRESHOLD</div>
+                      <div style={{ borderTop: `2px solid rgba(200,169,110,0.45)` }} />
+                      <div style={{ fontSize: "10px", color: T.textMeta, fontStyle: "italic", textAlign: "center", padding: "4px 0 2px", fontFamily: T.fontDisplay }}>Below this line, important parts of life begin to suffer.</div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "12px" }}>
               {[
-                { label: "Daily Signal", sub: "Energy · what's loud · behaviour signals", time: "~2 min", target: "daily" },
-                { label: "Weekly Pulse", sub: "Full Horizon Scale across all 7 domains", time: "~10 min", target: "scan" },
+                { label: "Daily Pulse", sub: "7 domains · ~40 seconds", time: "Daily", target: "daily" },
+                { label: "Weekly Pulse", sub: "Full calibration across all 7 domains", time: "Weekly", target: "scan" },
               ].map(btn => (
                 <button key={btn.target} onClick={() => setView(btn.target)}
                   style={{ padding: "20px 16px", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "10px", cursor: "pointer", textAlign: "left", transition: "all 0.2s", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}
