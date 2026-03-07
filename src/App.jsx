@@ -50,11 +50,12 @@ const T = {
   goldBorder:   "rgba(200,169,110,0.25)",
   goldBorderHi: "rgba(200,169,110,0.55)",
   bg:           "#FAFAF7",
-  text:         "#1A1A1A",
+  text:         "#0F1523",   // near-black dark blue — matches indigo
   textBody:     "#4A4A4A",
   textMeta:     "#6B6B6B",
   card:         "#FFFFFF",
-  indigo:       "#2D3561",   // brand dark indigo — title colour
+  indigo:       "#0F1523",   // near-black dark blue — primary text + title
+  indigoMid:    "#1C2340",   // slightly lighter for secondary uses
   blue:         "#3B6B9E",   // 8–10 Exemplar → World-Class
   blueLight:    "#5A8AB8",
   bluePale:     "#7AA4CC",
@@ -528,7 +529,7 @@ function PulseWheel({ scores, size = 320 }) {
         const s  = scores[d.key] ?? 5;
         return (
           <g key={d.key}>
-            <text x={lp.x} y={lp.y - 7} textAnchor="middle" fill="#1A1A1A" fontSize="11" fontFamily={T.fontDisplay} fontWeight="600">{d.label}</text>
+            <text x={lp.x} y={lp.y - 7} textAnchor="middle" fill="#0F1523" fontSize="11" fontFamily={T.fontDisplay} fontWeight="600">{d.label}</text>
             <text x={lp.x} y={lp.y + 7} textAnchor="middle" fill={getTierColor(s)} fontSize="9.5" fontFamily={T.fontBody} opacity="0.85">{getScaleEntry(s)?.tier}</text>
           </g>
         );
@@ -822,7 +823,7 @@ function HorizonScalePicker({ domain, value, onChange }) {
             <div style={{ fontFamily: T.fontDisplay, fontSize: "19px", fontWeight: "600", color: T.text }}>{domain.label}</div>
             <button
               onClick={e => { e.stopPropagation(); setShowInfo(!showInfo); }}
-              style={{ width: "18px", height: "18px", borderRadius: "50%", border: `1px solid ${T.goldBorder}`, background: showInfo ? T.indigo : "transparent", color: showInfo ? "#FFF" : T.textMeta, fontSize: "10px", cursor: "pointer", flexShrink: 0, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: T.fontBody, transition: "all 0.15s" }}>
+              style={{ width: "20px", height: "20px", borderRadius: "50%", border: `1.5px solid ${showInfo ? T.indigo : T.gold}`, background: showInfo ? T.indigo : "transparent", color: showInfo ? "#FFF" : T.gold, fontSize: "11px", fontWeight: "600", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Georgia, serif", transition: "all 0.15s", lineHeight: 1 }}>
               i
             </button>
           </div>
@@ -1119,22 +1120,54 @@ export default function App() {
         {/* HOME */}
         {view === "home" && (
           <div>
+            {/* Radar wheel — always visible on home */}
+            {(() => {
+              const latestWeekly = (data.weekly || []).slice(-1)[0];
+              const displayScores = latestWeekly?.scores || Object.fromEntries(DOMAINS.map(d => [d.key, 5]));
+              const hasData = !!latestWeekly;
+              return (
+                <div style={{ padding: "28px 16px 20px", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "12px", boxShadow: "0 1px 4px rgba(0,0,0,0.05)", marginBottom: "20px", textAlign: "center" }}>
+                  {hasData && (
+                    <div style={{ marginBottom: "6px" }}>
+                      <span style={{ fontFamily: T.fontDisplay, fontSize: "13px", color: T.textMeta, fontStyle: "italic" }}>
+                        {latestWeekly.weekLabel || "Last weekly pulse"}
+                      </span>
+                    </div>
+                  )}
+                  <div style={{ display: "flex", justifyContent: "center" }}>
+                    <PulseWheel scores={displayScores} size={300} />
+                  </div>
+                  {!hasData && (
+                    <p style={{ fontSize: "12px", color: T.textMeta, fontStyle: "italic", marginTop: "12px", fontFamily: T.fontDisplay, lineHeight: 1.6 }}>
+                      Complete your first Weekly Pulse to see your map here.
+                    </p>
+                  )}
+                  {hasData && (
+                    <div style={{ marginTop: "12px", fontFamily: T.fontDisplay, fontSize: "26px", fontWeight: "300", color: getTierColor(calcAvg(displayScores)) }}>
+                      {calcAvg(displayScores)} · <span style={{ fontSize: "15px" }}>{getScaleEntry(calcAvg(displayScores))?.tier}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* Horizon Scale card */}
             <div style={{ marginBottom: "28px", padding: "18px 22px", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "10px", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
               <SectionLabel>THE HORIZON SCALE</SectionLabel>
               {SCALE_BANDS.map(item => (
                 <div key={item.label}>
                   {item.dividerAfter ? (
-                    /* Threshold block — all content sandwiched between two gold rules */
-                    <div style={{ margin: "6px 0" }}>
+                    <div style={{ margin: "8px 0" }}>
                       <div style={{ borderTop: "2px solid rgba(200,169,110,0.5)" }} />
-                      <div style={{ padding: "10px 0 8px", textAlign: "center" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px", padding: "0 2px" }}>
+                      <div style={{ padding: "12px 4px", display: "flex", flexDirection: "column", gap: "5px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                           <span style={{ fontSize: "13px", color: item.color, fontFamily: T.fontDisplay, fontWeight: "500" }}>{item.label}</span>
                           <span style={{ fontSize: "11px", color: T.textMeta }}>{item.range}</span>
                         </div>
-                        <div style={{ fontSize: "9px", color: T.gold, letterSpacing: "0.2em", fontWeight: "700", marginBottom: "4px" }}>5 · VIABILITY THRESHOLD</div>
-                        <div style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic", fontFamily: T.fontDisplay, lineHeight: 1.5 }}>Below this line, important parts of life begin to suffer.</div>
+                        <div style={{ textAlign: "center" }}>
+                          <div style={{ fontSize: "9px", color: T.gold, letterSpacing: "0.2em", fontWeight: "700" }}>5 · VIABILITY THRESHOLD</div>
+                          <div style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic", fontFamily: T.fontDisplay, marginTop: "3px", lineHeight: 1.5 }}>Below this line, important parts of life begin to suffer.</div>
+                        </div>
                       </div>
                       <div style={{ borderTop: "2px solid rgba(200,169,110,0.5)" }} />
                     </div>
