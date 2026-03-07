@@ -514,9 +514,9 @@ function PulseWheel({ scores, size = 320 }) {
         return <line key={i} x1={cx} y1={cy} x2={cx+maxR*Math.cos(a)} y2={cy+maxR*Math.sin(a)} stroke="rgba(200,169,110,0.2)" strokeWidth="1" />;
       })}
       {/* Glow layer */}
-      <polygon points={polygonPoints} fill="none" stroke="rgba(220,175,60,0.22)" strokeWidth="7" strokeLinejoin="round" />
-      {/* Shape — brilliant gold */}
-      <polygon points={polygonPoints} fill="rgba(220,185,80,0.08)" stroke="#E8C040" strokeWidth="2.2" strokeLinejoin="round" style={{ transition: "all 0.4s ease", filter: "drop-shadow(0 0 5px rgba(240,200,60,0.55))" }} />
+      <polygon points={polygonPoints} fill="none" stroke="rgba(220,175,60,0.12)" strokeWidth="4" strokeLinejoin="round" />
+      {/* Shape — delicate gold */}
+      <polygon points={polygonPoints} fill="rgba(220,185,80,0.06)" stroke="#E8C040" strokeWidth="0.75" strokeLinejoin="round" style={{ transition: "all 0.4s ease", filter: "drop-shadow(0 0 3px rgba(240,200,60,0.4))" }} />
       {/* Score dots */}
       {DOMAINS.map((d, i) => {
         const s = scores[d.key] ?? 5;
@@ -1099,11 +1099,11 @@ export default function App() {
           <div style={{ marginBottom: "16px" }}>
             <img
               src="/logo.png"
-              alt="Life OS: Pulse"
+              alt=""
               style={{ width: "72px", height: "72px", objectFit: "contain" }}
             />
           </div>
-          <h1 style={{ fontFamily: T.fontDisplay, fontSize: "52px", fontWeight: "300", color: T.indigo, lineHeight: 1, letterSpacing: "-0.01em", margin: 0 }}>
+          <h1 style={{ fontFamily: T.fontDisplay, fontSize: "52px", fontWeight: "300", color: T.gold, lineHeight: 1, letterSpacing: "-0.01em", margin: 0 }}>
             <span style={{ fontSize: "22px", fontWeight: "400", color: T.gold, letterSpacing: "0.01em" }}>Life OS: </span>Pulse
           </h1>
         </div>
@@ -1159,14 +1159,14 @@ export default function App() {
                   {item.dividerAfter ? (
                     <div style={{ margin: "8px 0" }}>
                       <div style={{ borderTop: "2px solid rgba(200,169,110,0.5)" }} />
-                      <div style={{ padding: "12px 4px", display: "flex", flexDirection: "column", gap: "5px" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{ padding: "14px 4px 14px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
                           <span style={{ fontSize: "13px", color: item.color, fontFamily: T.fontDisplay, fontWeight: "500" }}>{item.label}</span>
                           <span style={{ fontSize: "11px", color: T.textMeta }}>{item.range}</span>
                         </div>
                         <div style={{ textAlign: "center" }}>
-                          <div style={{ fontSize: "9px", color: T.gold, letterSpacing: "0.2em", fontWeight: "700" }}>5 · VIABILITY THRESHOLD</div>
-                          <div style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic", fontFamily: T.fontDisplay, marginTop: "3px", lineHeight: 1.5 }}>Below this line, important parts of life begin to suffer.</div>
+                          <div style={{ fontSize: "9px", color: T.gold, letterSpacing: "0.2em", fontWeight: "700", marginBottom: "4px" }}>5 · VIABILITY THRESHOLD</div>
+                          <div style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic", fontFamily: T.fontDisplay, lineHeight: 1.5 }}>Below this line, important parts of life begin to suffer.</div>
                         </div>
                       </div>
                       <div style={{ borderTop: "2px solid rgba(200,169,110,0.5)" }} />
