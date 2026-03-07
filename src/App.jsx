@@ -2,43 +2,41 @@ import { useState, useEffect } from "react";
 
 // ============================================================
 // STORAGE LAYER
-// Currently: localStorage for testing.
-// Supabase swap — replace these functions only, nothing else changes:
+// Currently: localStorage. Supabase swap: replace loadData +
+// saveData only — nothing else in this file needs to change.
 //
 //   import { supabase } from "./supabaseClient"
 //
 //   async function loadData() {
 //     const { data } = await supabase
-//       .from('pulse_entries')
-//       .select('*')
-//       .order('date', { ascending: true });
-//     return data || { weekly: [], daily: [] };
+//       .from('pulse_entries').select('*')
+//       .order('created_at', { ascending: true });
+//     return data || emptyData();
 //   }
-//
-//   async function saveData(data) {
-//     await supabase.from('pulse_entries').upsert(data);
+//   async function saveData(payload) {
+//     await supabase.from('pulse_entries').upsert(payload);
 //     return true;
 //   }
 // ============================================================
 
-const STORAGE_KEY = "life_os_pulse_v2";
+const STORAGE_KEY = "life_os_pulse_v3";
+
+function emptyData() {
+  return { daily: [], weekly: [], monthly: [], quarterly: [], yearly: [] };
+}
 
 async function loadData() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : { weekly: [], daily: [] };
-  } catch (e) {
-    return { weekly: [], daily: [] };
-  }
+    return raw ? { ...emptyData(), ...JSON.parse(raw) } : emptyData();
+  } catch { return emptyData(); }
 }
 
 async function saveData(data) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     return true;
-  } catch (e) {
-    return false;
-  }
+  } catch { return false; }
 }
 
 // ============================================================
@@ -46,95 +44,215 @@ async function saveData(data) {
 // ============================================================
 
 const T = {
-  gold:        "#C8A96E",
-  goldLight:   "#C8A96E",
-  goldMid:     "#B8943A",
-  goldMuted:   "#6B6B6B",
-  goldFaint:   "rgba(200,169,110,0.10)",
-  goldBorder:  "rgba(200,169,110,0.25)",
-  goldBorderHi:"rgba(200,169,110,0.55)",
-  goldGlow:    "#FFFFFF",
-  bg:          "#FAFAF7",
-  text:        "#1A1A1A",
-  textBody:    "#4A4A4A",
-  textMeta:    "#6B6B6B",
-  card:        "#FFFFFF",
-  green:       "#4A7A44",
-  amber:       "#8A7030",
-  orange:      "#8A5030",
-  red:         "#8A3030",
-  fontDisplay: "'Cormorant Garamond', Georgia, serif",
-  fontBody:    "Georgia, serif",
+  gold:         "#C8A96E",
+  goldMid:      "#B8943A",
+  goldFaint:    "rgba(200,169,110,0.10)",
+  goldBorder:   "rgba(200,169,110,0.25)",
+  goldBorderHi: "rgba(200,169,110,0.55)",
+  bg:           "#FAFAF7",
+  text:         "#1A1A1A",
+  textBody:     "#4A4A4A",
+  textMeta:     "#6B6B6B",
+  card:         "#FFFFFF",
+  blue:         "#3B6B9E",
+  blueLight:    "#5A8AB8",
+  bluePale:     "#7AA4CC",
+  stone:        "#8A8070",
+  amber:        "#8A7030",
+  red:          "#8A3030",
+  fontDisplay:  "'Cormorant Garamond', Georgia, serif",
+  fontBody:     "Georgia, serif",
 };
 
 // ============================================================
-// DATA
+// DATA CONSTANTS
 // ============================================================
 
-const HORIZON_SCALE = [
-  { value: 10,  tier: "World-Class",  label: "Complete coherence",      description: "Effortless mastery. Luminous presence. Contribution that uplifts everyone around you. The art and the artist are one." },
-  { value: 9.5, tier: "Exemplar+",    label: "Integrated and at ease",  description: "Leading by example without effort. Influence radiates naturally. Others orient toward you." },
-  { value: 9,   tier: "Exemplar",     label: "Excellence feels natural", description: "Deeply skilled, balanced, reliable. You are not striving — you are expressing." },
-  { value: 8.5, tier: "Fluent+",      label: "Competence meets wisdom", description: "Solid and growing. You bring both skill and perspective. Depth is increasing." },
-  { value: 8,   tier: "Fluent",       label: "Steady and grounded",     description: "Strong foundations. Consistent excellence. Self-aware and calm under pressure." },
-  { value: 7.5, tier: "Capable+",     label: "Building confidence",     description: "Clear progress. Deliberate practice paying off. You can feel the momentum." },
-  { value: 7,   tier: "Capable",      label: "Dependable and engaged",  description: "Showing up reliably. Purposeful. Contributing well." },
-  { value: 6.5, tier: "Functional+",  label: "Rebuilding rhythm",       description: "Mostly consistent. Habits stabilising. Pacing yourself. Moving in the right direction." },
-  { value: 6,   tier: "Functional",   label: "Managing the basics",     description: "Holding it together. Responsible and competent. Sometimes fatigued." },
-  { value: 5.5, tier: "Plateau+",     label: "Something stirring",      description: "Curiosity returning. Not quite moving yet, but the stillness is ending." },
-  { value: 5,   tier: "Plateau",      label: "Holding steady",          description: "Maintaining without expanding. Uninspired but not in pain. The viability threshold." },
-  { value: 4.5, tier: "Friction+",    label: "Awareness of stuckness",  description: "Restless. You can feel that something needs to change. Not yet moving." },
-  { value: 4,   tier: "Friction",     label: "Stuck but willing",       description: "Desire present, momentum low. Self-judgment softening into openness." },
-  { value: 3.5, tier: "Strain+",      label: "Fatigue and doubt",       description: "Inconsistent. Overwhelmed at times. Starting to see the pattern you're in." },
-  { value: 3,   tier: "Strain",       label: "Contracted",              description: "Energy collapsed inward. Fear or shame present. Rest, not force, is what's needed." },
-  { value: 2.5, tier: "Crisis+",      label: "Holding on",              description: "High stress, low support. Survival instincts active. One day at a time." },
-  { value: 2,   tier: "Crisis",       label: "Depleted",                description: "Basics unmet. Clarity lost. Exhaustion or anxiety is chronic." },
-  { value: 1.5, tier: "Emergency+",   label: "Deep pain or numb",       description: "Alternating between intensity and shutdown. Not okay, and that is real." },
-  { value: 1,   tier: "Emergency",    label: "Disconnected",            description: "Spiritually or emotionally collapsed. The light has dimmed. Support is needed." },
-  { value: 0,   tier: "Ground Zero",  label: "Complete reset",          description: "End of a cycle. Everything cleared. Stillness before what comes next." },
-];
-
 const DOMAINS = [
-  { key: "path",          label: "Path",         description: "Your calling, contribution & the work you're here to do" },
-  { key: "spark",         label: "Spark",        description: "The animating fire — aliveness, joy, play & the godspark" },
-  { key: "body",          label: "Body",         description: "Physical vitality, health, energy & embodiment" },
-  { key: "finances",      label: "Finances",     description: "Your relationship with money, resources & abundance" },
-  { key: "relationships", label: "Relationships",description: "Intimacy, friendship, community & belonging" },
-  { key: "innergame",     label: "Inner Game",   description: "Your relationship with yourself — beliefs, values & self-trust" },
-  { key: "outergame",     label: "Outer Game",   description: "How you show up in the world — presence, expression & public identity" },
+  { key: "path",          label: "Path",          description: "Your calling, contribution & the work you're here to do" },
+  { key: "spark",         label: "Spark",         description: "The animating fire — aliveness, joy, play & the godspark" },
+  { key: "body",          label: "Body",           description: "Physical vitality, health, energy & embodiment" },
+  { key: "finances",      label: "Finances",       description: "Your relationship with money, resources & abundance" },
+  { key: "relationships", label: "Relationships",  description: "Intimacy, friendship, community & belonging" },
+  { key: "innergame",     label: "Inner Game",     description: "Your relationship with yourself — beliefs, values & self-trust" },
+  { key: "outergame",     label: "Outer Game",     description: "How you show up in the world — presence, expression & public identity" },
 ];
 
+// Integer 0–10 anchors for daily heat check
+const HEAT_BANDS = [
+  { min: 9, max: 10, color: T.blue,      label: "Exemplar" },
+  { min: 7, max: 8,  color: T.blueLight, label: "Fluent" },
+  { min: 5, max: 6,  color: T.stone,     label: "Functional" },
+  { min: 3, max: 4,  color: T.amber,     label: "Friction" },
+  { min: 0, max: 2,  color: T.red,       label: "Crisis" },
+];
 
+// Half-point weekly scale
+const HORIZON_SCALE = [
+  { value: 10,  tier: "World-Class",  label: "Complete coherence",       description: "Effortless mastery. Luminous presence. Contribution that uplifts everyone around you." },
+  { value: 9.5, tier: "Exemplar+",   label: "Integrated and at ease",   description: "Leading by example without effort. Influence radiates naturally." },
+  { value: 9,   tier: "Exemplar",    label: "Excellence feels natural",  description: "Deeply skilled, balanced, reliable. You are not striving — you are expressing." },
+  { value: 8.5, tier: "Fluent+",     label: "Competence meets wisdom",   description: "Solid and growing. Skill and perspective both present. Depth is increasing." },
+  { value: 8,   tier: "Fluent",      label: "Steady and grounded",       description: "Strong foundations. Consistent excellence. Self-aware and calm under pressure." },
+  { value: 7.5, tier: "Capable+",    label: "Building confidence",       description: "Clear progress. Deliberate practice paying off. You can feel the momentum." },
+  { value: 7,   tier: "Capable",     label: "Dependable and engaged",    description: "Showing up reliably. Purposeful. Contributing well." },
+  { value: 6.5, tier: "Functional+", label: "Rebuilding rhythm",         description: "Mostly consistent. Habits stabilising. Moving in the right direction." },
+  { value: 6,   tier: "Functional",  label: "Managing the basics",       description: "Holding it together. Responsible and competent. Sometimes fatigued." },
+  { value: 5.5, tier: "Plateau+",    label: "Something stirring",        description: "Curiosity returning. Not quite moving yet, but the stillness is ending." },
+  { value: 5,   tier: "Plateau",     label: "Holding steady",            description: "Maintaining without expanding. Uninspired but not in pain. The viability threshold." },
+  { value: 4.5, tier: "Friction+",   label: "Awareness of stuckness",    description: "Restless. You can feel that something needs to change. Not yet moving." },
+  { value: 4,   tier: "Friction",    label: "Stuck but willing",         description: "Desire present, momentum low. Self-judgment softening into openness." },
+  { value: 3.5, tier: "Strain+",     label: "Fatigue and doubt",         description: "Inconsistent. Overwhelmed at times. Starting to see the pattern you're in." },
+  { value: 3,   tier: "Strain",      label: "Contracted",                description: "Energy collapsed inward. Fear or shame present. Rest, not force, is what's needed." },
+  { value: 2.5, tier: "Crisis+",     label: "Holding on",                description: "High stress, low support. Survival instincts active. One day at a time." },
+  { value: 2,   tier: "Crisis",      label: "Depleted",                  description: "Basics unmet. Clarity lost. Exhaustion or anxiety is chronic." },
+  { value: 1.5, tier: "Emergency+",  label: "Deep pain or numb",         description: "Alternating between intensity and shutdown. Not okay, and that is real." },
+  { value: 1,   tier: "Emergency",   label: "Disconnected",              description: "Spiritually or emotionally collapsed. The light has dimmed. Support is needed." },
+  { value: 0,   tier: "Ground Zero", label: "Complete reset",            description: "End of a cycle. Everything cleared. Stillness before what comes next." },
+];
 
 const SCALE_BANDS = [
-  { label: "Exemplar → World-Class", range: "8 – 10",   color: T.green,  dividerAfter: false },
-  { label: "Capable → Fluent",       range: "6.5 – 7.5", color: T.gold,  dividerAfter: false },
-  { label: "Functional → Plateau",   range: "5 – 6",    color: T.amber,  dividerAfter: true  },
-  { label: "Friction → Strain",      range: "3 – 4.5",  color: T.orange, dividerAfter: false },
-  { label: "Crisis → Ground Zero",   range: "0 – 2.5",  color: T.red,    dividerAfter: false },
+  { label: "Exemplar → World-Class", range: "8 – 10",    color: T.blue,      dividerAfter: false },
+  { label: "Capable → Fluent",       range: "6.5 – 7.5", color: T.blueLight, dividerAfter: false },
+  { label: "Functional → Plateau",   range: "5 – 6",     color: T.stone,     dividerAfter: true  },
+  { label: "Friction → Strain",      range: "3 – 4.5",   color: T.amber,     dividerAfter: false },
+  { label: "Crisis → Ground Zero",   range: "0 – 2.5",   color: T.red,       dividerAfter: false },
 ];
 
 const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const MONTH_FULL  = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const QUARTER_MONTHS = [[0,1,2],[3,4,5],[6,7,8],[9,10,11]];
+
+// ============================================================
+// DATE / CADENCE HELPERS
+// ============================================================
+
+function getLocalDateStr(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+}
+
+function getWeekId(date = new Date()) {
+  // ISO week starting Monday; label uses Sun–Sat display
+  const d = new Date(date);
+  d.setHours(0,0,0,0);
+  const day = d.getDay(); // 0=Sun
+  const mon = new Date(d);
+  mon.setDate(d.getDate() - ((day + 6) % 7));
+  return getLocalDateStr(mon);
+}
+
+function getWeekRange(date = new Date()) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const sun = new Date(d); sun.setDate(d.getDate() - day);
+  const sat = new Date(sun); sat.setDate(sun.getDate() + 6);
+  const fmt = (dt) => `${MONTH_NAMES[dt.getMonth()]} ${dt.getDate()}`;
+  return `${fmt(sun)}–${fmt(sat)}`;
+}
+
+function getMonthId(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
+}
+
+function getQuarterId(date = new Date()) {
+  const q = Math.floor(date.getMonth() / 3) + 1;
+  return `${date.getFullYear()}-Q${q}`;
+}
+
+function getYearId(date = new Date()) {
+  return String(date.getFullYear());
+}
+
+// Weekly pulse: unlocks Sunday 5am, grace Mon–Tue 11:59pm
+function getWeeklyPulseStatus(date = new Date()) {
+  const day = date.getDay(); // 0=Sun
+  const hour = date.getHours();
+
+  if (day === 0 && hour >= 5) return "available";   // Sun after 5am
+  if (day === 1) return "available";                 // Monday
+  if (day === 2) return "available";                 // Tuesday
+  if (day === 3 || day === 4 || day === 5) return "locked_early"; // Wed–Fri
+  if (day === 6) return "locked_early";              // Saturday
+  if (day === 0 && hour < 5) return "locked_early";  // Sun before 5am
+  return "locked_early";
+}
+
+function getWeeklyUnlockCountdown(date = new Date()) {
+  const day = date.getDay();
+  const daysUntilSun = (7 - day) % 7 || 7;
+  const nextSun = new Date(date);
+  nextSun.setDate(date.getDate() + (day === 0 ? 7 : daysUntilSun));
+  nextSun.setHours(5, 0, 0, 0);
+  if (day === 0 && date.getHours() < 5) {
+    nextSun.setDate(date.getDate());
+  }
+  const diff = nextSun - date;
+  const hours = Math.floor(diff / 3600000);
+  const mins  = Math.floor((diff % 3600000) / 60000);
+  if (hours > 48) return `Sunday at 5:00 a.m.`;
+  if (hours > 0)  return `in ${hours}h ${mins}m`;
+  return `in ${mins}m`;
+}
+
+// Monthly: last Sunday of month at 5am, grace first 3 days of next month
+function getMonthlyPulseStatus(date = new Date()) {
+  const y = date.getFullYear(), m = date.getMonth();
+  const lastDayOfMonth = new Date(y, m+1, 0);
+  const lastSunday = new Date(lastDayOfMonth);
+  lastSunday.setDate(lastDayOfMonth.getDate() - lastDayOfMonth.getDay());
+  lastSunday.setHours(5, 0, 0, 0);
+
+  const graceEnd = new Date(y, m+1, 3, 23, 59, 59);
+  if (date >= lastSunday && date <= graceEnd) return "available";
+  if (date > graceEnd) return "closed";
+  return "locked_early";
+}
+
+// Quarterly: last Sunday of quarter at 5am, grace first 7 days
+function getQuarterlyPulseStatus(date = new Date()) {
+  const q = Math.floor(date.getMonth() / 3);
+  const lastMonthOfQ = QUARTER_MONTHS[q][2];
+  const lastDayOfQ = new Date(date.getFullYear(), lastMonthOfQ+1, 0);
+  const lastSunday = new Date(lastDayOfQ);
+  lastSunday.setDate(lastDayOfQ.getDate() - lastDayOfQ.getDay());
+  lastSunday.setHours(5, 0, 0, 0);
+  const graceEnd = new Date(date.getFullYear(), lastMonthOfQ+1, 7, 23, 59, 59);
+  if (date >= lastSunday && date <= graceEnd) return "available";
+  if (date > graceEnd) return "closed";
+  return "locked_early";
+}
+
+// Yearly: last Sunday of year at 5am, grace through Jan 7
+function getYearlyPulseStatus(date = new Date()) {
+  const y = date.getFullYear();
+  const dec31 = new Date(y, 11, 31);
+  const lastSunday = new Date(dec31);
+  lastSunday.setDate(dec31.getDate() - dec31.getDay());
+  lastSunday.setHours(5, 0, 0, 0);
+  const graceEnd = new Date(y+1, 0, 7, 23, 59, 59);
+  if (date >= lastSunday && date <= graceEnd) return "available";
+  if (date > graceEnd) return "closed";
+  return "locked_early";
+}
 
 // ============================================================
 // HELPERS
 // ============================================================
 
-function formatDate(iso) {
-  const d = new Date(iso);
-  return `${MONTH_NAMES[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
-}
-
-function formatTime(iso) {
-  const d = new Date(iso);
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-}
-
 function getTierColor(value) {
-  if (value >= 8)   return T.green;
-  if (value >= 6.5) return T.gold;
-  if (value >= 5)   return T.amber;
-  if (value >= 3)   return T.orange;
+  if (value == null) return T.textMeta;
+  if (value >= 8)   return T.blue;
+  if (value >= 6.5) return T.blueLight;
+  if (value >= 5)   return T.stone;
+  if (value >= 3)   return T.amber;
+  return T.red;
+}
+
+function getHeatColor(n) {
+  if (n >= 9) return T.blue;
+  if (n >= 7) return T.blueLight;
+  if (n >= 5) return T.stone;
+  if (n >= 3) return T.amber;
   return T.red;
 }
 
@@ -145,31 +263,43 @@ function getScaleEntry(value) {
 }
 
 function calcAvg(scores) {
-  const vals = Object.values(scores).filter(v => v != null);
+  const vals = Object.values(scores).filter(v => v != null && v !== undefined);
   if (!vals.length) return null;
-  return (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1);
+  return parseFloat((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1));
+}
+
+function formatDate(iso) {
+  const d = new Date(iso);
+  return `${MONTH_NAMES[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
 function getInsights(weeklyHistory) {
   if (weeklyHistory.length < 2) return [];
   const insights = [];
   DOMAINS.forEach(d => {
-    const recent = weeklyHistory.slice(-3).map(h => h.scores[d.key]).filter(s => s != null);
+    const recent = weeklyHistory.slice(-3).map(h => h.scores?.[d.key]).filter(s => s != null);
     if (recent.length >= 2) {
       const allLow   = recent.every(s => s <= 4);
-      const dropping = recent[recent.length - 1] < recent[0] - 1;
-      const rising   = recent[recent.length - 1] > recent[0] + 1;
-      if (allLow)         insights.push({ type: "persistent", domain: d.label, message: `${d.label} has been in Friction or below for ${recent.length} consecutive check-ins.` });
-      else if (dropping)  insights.push({ type: "declining",  domain: d.label, message: `${d.label} has been declining across your recent check-ins.` });
-      else if (rising)    insights.push({ type: "rising",     domain: d.label, message: `${d.label} is showing consistent upward movement. Something is working.` });
+      const dropping = recent[recent.length-1] < recent[0] - 1;
+      const rising   = recent[recent.length-1] > recent[0] + 1;
+      if (allLow)        insights.push({ type: "persistent", domain: d.label, message: `${d.label} has been in Friction or below for ${recent.length} consecutive check-ins.` });
+      else if (dropping) insights.push({ type: "declining",  domain: d.label, message: `${d.label} has been declining across your recent check-ins.` });
+      else if (rising)   insights.push({ type: "rising",     domain: d.label, message: `${d.label} is showing consistent upward movement. Something is working.` });
     }
   });
   return insights;
 }
 
-function getRecentDailyEntries(dailyHistory, days = 7) {
-  const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
-  return (dailyHistory || []).filter(e => new Date(e.date).getTime() > cutoff);
+// Daily pulses this week
+function getDailyThisWeek(dailyHistory, date = new Date()) {
+  const weekId = getWeekId(date);
+  return (dailyHistory || []).filter(e => e.weekId === weekId);
+}
+
+// Today's daily pulse if exists
+function getTodaysPulse(dailyHistory, date = new Date()) {
+  const today = getLocalDateStr(date);
+  return (dailyHistory || []).find(e => e.localDate === today) || null;
 }
 
 // ============================================================
@@ -177,140 +307,115 @@ function getRecentDailyEntries(dailyHistory, days = 7) {
 // ============================================================
 
 async function callAgent(systemPrompt, userMessage) {
-  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-  if (!apiKey) throw new Error("No API key configured. Add VITE_ANTHROPIC_API_KEY to your .env file.");
-
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "anthropic-dangerous-direct-browser-access": "true",
     },
     body: JSON.stringify({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 600,
+      max_tokens: 1000,
       system: systemPrompt,
       messages: [{ role: "user", content: userMessage }],
     }),
   });
-
   if (!response.ok) throw new Error(`API error: ${response.status}`);
   const data = await response.json();
   return data.content[0].text;
 }
 
-const AGENT_SYSTEM_PROMPT = `You are the reflection agent for Life OS: Pulse — a personal development tool built on the Horizon Scale.
+const AGENT_SYSTEM = `You are the reflection agent for Life OS: Pulse — a personal development tool built on the Horizon Scale.
 
 THE HORIZON SCALE
-The scale runs 0–10 in 0.5 increments across four bands:
-- 0–3: Stabilise (Emergency through Strain) — needs rest and restoration, not expansion
-- 4–6: Rebuild (Friction through Functional) — structure forming, consistency over intensity
-- 7–8: Develop (Capable through Fluent) — solid foundation, intentional growth available
-- 9–10: Steward (Exemplar through World-Class) — mastery in service, contribution
+0–4.5: Deficit Zone — the system draws stability from surrounding systems. Needs restoration.
+5–7.5: Viable Zone — the system maintains itself and participates in life.
+8–10: Surplus Zone — the system produces more stability than it consumes.
+
+5 is the viability threshold. Below it, important parts of life begin to suffer.
 
 THE SEVEN DOMAINS
-- Path: calling, contribution, the work someone is here to do
-- Spark: the animating fire — aliveness, joy, play, the godspark. The question: is the fire on?
-- Body: physical vitality, health, energy, embodiment. Honour the instrument.
-- Finances: relationship with money and resources — sufficiency and right relationship, not just wealth
-- Relationships: intimacy, friendship, community, belonging — genuine contact, not just adjacency
-- Inner Game: relationship with self — beliefs, values, self-trust, inner authority. Are they on their own side?
-- Outer Game: how someone shows up in the world — presence, expression, public identity. Does how they show up reflect who they are?
+Path · Spark · Body · Finances · Relationships · Inner Game · Outer Game
 
-KEY DOMAIN COUPLINGS (notice these in the data)
-- Inner Game → Path: when self-trust builds, purposeful action follows
-- Body declining → often a leading indicator for systemic strain across domains
-- Finances ↔ Path: a large gap between these two is one of the most common sources of chronic friction
-- Outer Game lagging Path: high Path + low Outer Game often signals readiness at a threshold, not a capacity problem
-- Spark low despite stable other domains: functioning but not living
+KEY COUPLINGS
+Inner Game → Path: when self-trust builds, purposeful action follows
+Body declining → leading indicator for systemic strain
+Finances ↔ Path: large gap = common source of chronic friction
+Spark low despite stable domains: functioning but not living
 
 YOUR VOICE
-You are a senior practitioner — warm but not familiar, precise but not clinical. You witness; you do not fix. You notice; you do not prescribe. You orient toward desire and agency — what someone wants and how to get there — rather than reflecting back complaint or blame.
-
-Deliver language flat, low, matter-of-fact. Devoted through steadiness, not emotional display.
-
-Never say: "you should", "you need to", "that's amazing", "incredible", "I can see", "I notice"
-Never: diagnose, pathologise, compare to others, catastrophise low scores, ask more than one question
-Always: name what the data shows, hold low scores without alarm, use "yes and" architecture — validate current reality then gently expand scope
-
-SCOPE
-You are not a therapist. You are not a coach. You do not process emotional material. You do not provide action plans. You hold the map and reflect the pattern. If scores are in Emergency or Crisis bands (0–2.5) across multiple domains, respond with particular steadiness and gently note that professional support may be valuable alongside this practice.
+Senior practitioner. Warm but not familiar. Precise but not clinical.
+Witness, don't fix. Notice, don't prescribe.
+Flat, low, matter-of-fact delivery. Devoted through steadiness.
+Never: "you should", "you need to", "incredible", "I can see"
+Never: diagnose, pathologise, catastrophise low scores
+Always: name what the data shows, hold low scores without alarm
 
 RESPONSE LENGTH
-- Weekly synthesis: 100–180 words. End with one question or observation only.
-- Monthly reflection: 180–280 words. End with one question or observation only.`;
+Weekly: 100–180 words. One question or observation at the end.
+Monthly: 180–280 words. One question or observation at the end.
+Quarterly: 200–320 words. One orienting observation at the end.
+Annual: 280–400 words. One horizon question at the end.`;
 
-function buildWeeklySynthesisPrompt(weeklyEntry, recentDailyEntries, previousWeekly) {
-  const scores = weeklyEntry.scores;
-  const avg = calcAvg(scores);
-  const avgEntry = getScaleEntry(parseFloat(avg));
-
+function buildWeeklyPrompt(weeklyEntry, dailyThisWeek, previousWeekly) {
+  const avg = calcAvg(weeklyEntry.scores);
   const domainLines = DOMAINS.map(d => {
-    const s = scores[d.key];
+    const s = weeklyEntry.scores[d.key];
     const note = weeklyEntry.sayMore?.[d.key];
     return `${d.label}: ${s} (${getScaleEntry(s)?.tier})${note ? ` — "${note}"` : ""}`;
   }).join("\n");
 
-  const dailyLines = recentDailyEntries.length
-    ? recentDailyEntries.map(e => {
-        const domainScores = e.scores ? DOMAINS.map(d => `${d.label} ${e.scores[d.key] ?? "—"}`).join(", ") : "—";
-        return `${formatDate(e.date)} — ${domainScores}${e.note ? ` — "${e.note}"` : ""}`;
+  const dailyLines = dailyThisWeek.length
+    ? dailyThisWeek.map(e => {
+        const ds = DOMAINS.map(d => `${d.label} ${e.scores?.[d.key] ?? "—"}`).join(", ");
+        return `${e.localDate} — ${ds}${e.note ? ` — "${e.note}"` : ""}`;
       }).join("\n")
     : "No daily check-ins this week.";
 
   const historyLines = previousWeekly.slice(-2).map(h => {
     const a = calcAvg(h.scores);
-    return `${formatDate(h.date)}: avg ${a} — ${DOMAINS.map(d => `${d.label} ${h.scores[d.key]}`).join(", ")}`;
+    return `${h.weekLabel || h.weekId}: avg ${a}`;
   }).join("\n") || "No previous history.";
 
-  return `WEEKLY PULSE — ${formatDate(weeklyEntry.date)}
-Overall average: ${avg} (${avgEntry?.tier})
+  return `WEEKLY PULSE — ${weeklyEntry.weekLabel || weeklyEntry.weekId}
+Overall: ${avg} (${getScaleEntry(avg)?.tier})
 
 DOMAIN SCORES:
 ${domainLines}
 
-DAILY CHECK-INS THIS WEEK (${recentDailyEntries.length} entries):
+DAILY CHECK-INS THIS WEEK (${dailyThisWeek.length}):
 ${dailyLines}
 
 PREVIOUS WEEKS:
 ${historyLines}
 
-${weeklyEntry.reflection ? `REFLECTION NOTE: "${weeklyEntry.reflection}"` : ""}
-${weeklyEntry.oneThingDomain ? `FOCUS DOMAIN: ${DOMAINS.find(d => d.key === weeklyEntry.oneThingDomain)?.label}` : ""}
+${weeklyEntry.reflection ? `REFLECTION: "${weeklyEntry.reflection}"` : ""}
+${weeklyEntry.focusDomain ? `FOCUS DOMAIN: ${DOMAINS.find(d=>d.key===weeklyEntry.focusDomain)?.label}` : ""}
 
-Generate a weekly synthesis. Name what the data shows — domain patterns, correlations with behaviour signals, movement since last week. Hold low scores without alarm. End with one question or observation.`;
+Generate a weekly synthesis. Name what the data shows — domain patterns, movement since last week, any notable daily patterns. Hold low scores without alarm. End with one question or observation.`;
 }
 
-function buildMonthlyReflectionPrompt(weeklyHistory, dailyHistory) {
-  const recent = weeklyHistory.slice(-4);
-  const avgTrend = recent.map(h => `${formatDate(h.date)}: ${calcAvg(h.scores)}`).join(", ");
-
+function buildMonthlyPrompt(monthlyData, weeklyThisMonth, dailyThisMonth) {
   const domainTrends = DOMAINS.map(d => {
-    const vals = recent.map(h => h.scores[d.key]).filter(v => v != null);
-    const first = vals[0], last = vals[vals.length - 1];
+    const vals = weeklyThisMonth.map(h => h.scores?.[d.key]).filter(v => v != null);
+    const first = vals[0], last = vals[vals.length-1];
     const delta = first != null && last != null ? (last - first).toFixed(1) : "n/a";
-    return `${d.label}: ${vals.join(" → ")} (change: ${delta})`;
+    return `${d.label}: ${vals.join(" → ")} (Δ ${delta})`;
   }).join("\n");
 
-  const recentNotes = getRecentDailyEntries(dailyHistory, 30)
-    .filter(e => e.note)
-    .map(e => `${formatDate(e.date)}: "${e.note}"`)
-    .join("\n") || "No daily notes this month.";
+  const notes = dailyThisMonth.filter(e => e.note).map(e => `${e.localDate}: "${e.note}"`).join("\n") || "None.";
 
-  return `MONTHLY REFLECTION — ${MONTH_NAMES[new Date().getMonth()]} ${new Date().getFullYear()}
-
-AVERAGE TREND (last 4 weekly check-ins):
-${avgTrend}
+  return `MONTHLY PULSE — ${monthlyData.monthLabel}
+Weekly check-ins: ${weeklyThisMonth.length} | Daily check-ins: ${dailyThisMonth.length}
 
 DOMAIN MOVEMENT:
 ${domainTrends}
 
-DAILY NOTES THIS MONTH:
-${recentNotes}
+DAILY NOTES:
+${notes}
 
-Generate a monthly reflection. Look at the arc — what is shifting, what is holding, what patterns are visible across the month that weren't obvious week-to-week. Note significant domain correlations. If any domain has been persistently below 5, name it. End with one question or observation.`;
+${monthlyData.reflection ? `REFLECTION: "${monthlyData.reflection}"` : ""}
+
+Generate a monthly reflection. What is shifting, what is holding, what patterns are visible across the month. Note domain correlations. If any domain has been persistently below 5, name it. End with one question.`;
 }
 
 // ============================================================
@@ -325,9 +430,6 @@ const css = `
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: rgba(200,169,110,0.35); border-radius: 2px; }
   textarea { resize: vertical; }
-  input[type=range] { -webkit-appearance: none; appearance: none; background: transparent; width: 100%; cursor: pointer; }
-  input[type=range]::-webkit-slider-runnable-track { height: 2px; background: rgba(200,169,110,0.25); border-radius: 1px; }
-  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: #C8A96E; margin-top: -8px; }
   ::placeholder { color: #BBAB90; font-style: italic; }
 `;
 
@@ -346,28 +448,28 @@ function Divider({ margin = "28px 0" }) {
 function InsightCard({ insight }) {
   const isRising = insight.type === "rising";
   return (
-    <div style={{ padding: "13px 16px", marginBottom: "8px", borderLeft: `3px solid ${isRising ? T.green : T.orange}`, background: isRising ? "rgba(74,122,68,0.05)" : "rgba(138,80,48,0.05)", borderRadius: "0 6px 6px 0" }}>
-      <p style={{ margin: 0, fontSize: "13px", color: isRising ? T.green : T.orange, fontStyle: "italic", lineHeight: 1.6 }}>{insight.message}</p>
+    <div style={{ padding: "13px 16px", marginBottom: "8px", borderLeft: `3px solid ${isRising ? T.blue : T.amber}`, background: isRising ? "rgba(59,107,158,0.05)" : "rgba(138,112,48,0.05)", borderRadius: "0 6px 6px 0" }}>
+      <p style={{ margin: 0, fontSize: "13px", color: isRising ? T.blue : T.amber, fontStyle: "italic", lineHeight: 1.6 }}>{insight.message}</p>
     </div>
   );
 }
 
 function AgentReflection({ text, loading, error }) {
   if (loading) return (
-    <div style={{ padding: "24px", border: `1px solid ${T.goldBorder}`, borderRadius: "10px", background: T.card, textAlign: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+    <div style={{ padding: "24px", border: `1px solid ${T.goldBorder}`, borderRadius: "10px", background: T.card, textAlign: "center" }}>
       <div style={{ color: T.gold, fontFamily: T.fontDisplay, fontSize: "16px", fontStyle: "italic" }}>Reading your map...</div>
     </div>
   );
   if (error) return (
-    <div style={{ padding: "16px", border: "1px solid rgba(138,80,48,0.2)", borderRadius: "10px", background: "rgba(138,80,48,0.04)" }}>
-      <p style={{ color: T.orange, fontSize: "13px", margin: 0 }}>{error}</p>
+    <div style={{ padding: "16px", border: "1px solid rgba(138,112,48,0.2)", borderRadius: "10px", background: "rgba(138,112,48,0.04)" }}>
+      <p style={{ color: T.amber, fontSize: "13px", margin: 0 }}>{error}</p>
     </div>
   );
   if (!text) return null;
   return (
     <div style={{ padding: "22px 24px", border: `1px solid ${T.goldBorderHi}`, borderRadius: "10px", background: T.card, borderLeft: `3px solid ${T.gold}`, boxShadow: "0 2px 8px rgba(200,169,110,0.08)" }}>
       <SectionLabel>YOUR REFLECTION</SectionLabel>
-      <p style={{ margin: 0, fontSize: "15px", color: T.textBody, fontFamily: T.fontDisplay, fontStyle: "italic", lineHeight: 1.8, fontWeight: "400" }}>{text}</p>
+      <p style={{ margin: 0, fontSize: "15px", color: T.textBody, fontFamily: T.fontDisplay, fontStyle: "italic", lineHeight: 1.8 }}>{text}</p>
     </div>
   );
 }
@@ -391,11 +493,11 @@ function PulseWheel({ scores, size = 320 }) {
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ overflow: "visible" }}>
       {[2,4,6,8,10].map(r => {
-        const pts = DOMAINS.map((_, i) => { const a = (i / n) * 2 * Math.PI - Math.PI / 2; const rad = maxR * (r / 10); return `${cx + rad * Math.cos(a)},${cy + rad * Math.sin(a)}`; }).join(" ");
+        const pts = DOMAINS.map((_, i) => { const a = (i/n)*2*Math.PI-Math.PI/2; const rad = maxR*(r/10); return `${cx+rad*Math.cos(a)},${cy+rad*Math.sin(a)}`; }).join(" ");
         return <polygon key={r} points={pts} fill="none" stroke="rgba(200,169,110,0.2)" strokeWidth="1" />;
       })}
-      {DOMAINS.map((_, i) => { const a = (i / n) * 2 * Math.PI - Math.PI / 2; return <line key={i} x1={cx} y1={cy} x2={cx + maxR * Math.cos(a)} y2={cy + maxR * Math.sin(a)} stroke="rgba(200,169,110,0.2)" strokeWidth="1" />; })}
-      <polygon points={polygonPoints} fill="rgba(200,169,110,0.1)" stroke={T.gold} strokeWidth="1.5" strokeLinejoin="round" style={{ transition: "all 0.4s ease" }} />
+      {DOMAINS.map((_, i) => { const a = (i/n)*2*Math.PI-Math.PI/2; return <line key={i} x1={cx} y1={cy} x2={cx+maxR*Math.cos(a)} y2={cy+maxR*Math.sin(a)} stroke="rgba(200,169,110,0.2)" strokeWidth="1" />; })}
+      <polygon points={polygonPoints} fill="rgba(200,169,110,0.08)" stroke={T.gold} strokeWidth="1.5" strokeLinejoin="round" style={{ transition: "all 0.4s ease" }} />
       {DOMAINS.map((d, i) => { const s = scores[d.key] ?? 5; const p = getPoint(i, s); return <circle key={d.key} cx={p.x} cy={p.y} r={4} fill={getTierColor(s)} stroke={T.bg} strokeWidth="1.5" />; })}
       {DOMAINS.map((d, i) => {
         const lp = getLabelPoint(i); const s = scores[d.key] ?? 5;
@@ -412,14 +514,165 @@ function PulseWheel({ scores, size = 320 }) {
 }
 
 // ============================================================
-// HORIZON SCALE PICKER
+// DAILY HEAT CHECK — number tap with colour band guide
+// ============================================================
+
+function HeatScoreRow({ domain, value, onChange }) {
+  const nums = [0,1,2,3,4,5,6,7,8,9,10];
+  return (
+    <div style={{ marginBottom: "14px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+        <span style={{ fontFamily: T.fontDisplay, fontSize: "16px", fontWeight: "600", color: T.text }}>{domain.label}</span>
+        {value !== null && (
+          <span style={{ fontFamily: T.fontDisplay, fontSize: "13px", color: getTierColor(value), fontWeight: "600" }}>
+            {getScaleEntry(value)?.tier}
+          </span>
+        )}
+      </div>
+      <div style={{ display: "flex", gap: "4px" }}>
+        {nums.map(n => {
+          const col = getHeatColor(n);
+          const isSelected = value === n;
+          return (
+            <button key={n} onClick={() => onChange(n)}
+              style={{
+                flex: 1, height: "36px", border: isSelected ? `2px solid ${col}` : "1px solid rgba(200,169,110,0.2)",
+                borderRadius: "4px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "12px", fontWeight: isSelected ? "700" : "400",
+                color: isSelected ? "#FFFFFF" : T.textMeta,
+                background: isSelected ? col : `${col}18`,
+                transition: "all 0.1s",
+              }}>
+              {n}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Weekly rhythm dots
+function WeekDots({ count, total = 7 }) {
+  return (
+    <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
+      {Array.from({ length: total }).map((_, i) => (
+        <div key={i} style={{
+          width: "8px", height: "8px", borderRadius: "50%",
+          background: i < count ? T.gold : "rgba(200,169,110,0.2)",
+          transition: "background 0.2s"
+        }} />
+      ))}
+    </div>
+  );
+}
+
+// ============================================================
+// DAILY CHECK-IN VIEW
+// ============================================================
+
+function DailyCheckIn({ existing, onSave, onClose }) {
+  const initScores = existing?.scores || Object.fromEntries(DOMAINS.map(d => [d.key, null]));
+  const [scores, setScores] = useState(initScores);
+  const [note, setNote] = useState(existing?.note || "");
+  const [saving, setSaving] = useState(false);
+
+  const scoredCount = DOMAINS.filter(d => scores[d.key] !== null).length;
+  const allScored = scoredCount === DOMAINS.length;
+  const avg = allScored ? calcAvg(Object.fromEntries(DOMAINS.map(d => [d.key, scores[d.key]]))) : null;
+
+  async function handleSave() {
+    setSaving(true);
+    const now = new Date();
+    await onSave({
+      localDate: getLocalDateStr(now),
+      weekId:    getWeekId(now),
+      monthId:   getMonthId(now),
+      quarterId: getQuarterId(now),
+      yearId:    getYearId(now),
+      timestamp: now.toISOString(),
+      scores,
+      note,
+    });
+    setSaving(false);
+  }
+
+  const isEdit = !!existing;
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "28px" }}>
+        <button onClick={onClose} style={{ background: "none", border: `1px solid ${T.goldBorder}`, color: T.textMeta, padding: "7px 14px", borderRadius: "4px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em" }}>← BACK</button>
+        <div>
+          <div style={{ fontFamily: T.fontDisplay, fontSize: "26px", color: T.text, fontWeight: "400" }}>
+            {isEdit ? "Update Today's Pulse" : "Check Your Pulse"}
+          </div>
+          <div style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic", marginTop: "2px" }}>
+            {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+          </div>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div style={{ marginBottom: "6px", display: "flex", justifyContent: "space-between" }}>
+        <span style={{ fontSize: "10px", color: T.gold, letterSpacing: "0.12em", fontWeight: "600" }}>{scoredCount} OF 7</span>
+        {avg && <span style={{ fontFamily: T.fontDisplay, fontSize: "14px", color: getTierColor(avg), fontWeight: "600" }}>{avg} · {getScaleEntry(avg)?.tier}</span>}
+      </div>
+      <div style={{ height: "2px", background: "rgba(200,169,110,0.15)", borderRadius: "1px", marginBottom: "20px" }}>
+        <div style={{ height: "100%", width: `${(scoredCount/7)*100}%`, background: T.gold, borderRadius: "1px", transition: "width 0.3s" }} />
+      </div>
+
+      {/* Colour band legend */}
+      <div style={{ display: "flex", gap: "6px", marginBottom: "20px", flexWrap: "wrap" }}>
+        {HEAT_BANDS.slice().reverse().map(b => (
+          <div key={b.label} style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <div style={{ width: "8px", height: "8px", borderRadius: "2px", background: b.color }} />
+            <span style={{ fontSize: "10px", color: T.textMeta, fontFamily: T.fontBody }}>{b.label}</span>
+          </div>
+        ))}
+      </div>
+
+      <p style={{ fontSize: "12px", color: T.textMeta, fontStyle: "italic", marginBottom: "20px", fontFamily: T.fontDisplay }}>
+        Choose where you recognise yourself today.
+      </p>
+
+      {/* Domain rows */}
+      <div style={{ padding: "20px", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "12px", boxShadow: "0 1px 4px rgba(0,0,0,0.05)", marginBottom: "20px" }}>
+        {DOMAINS.map((d, i) => (
+          <div key={d.key}>
+            <HeatScoreRow domain={d} value={scores[d.key]} onChange={val => setScores(prev => ({ ...prev, [d.key]: val }))} />
+            {i < DOMAINS.length - 1 && <div style={{ borderBottom: "1px solid rgba(200,169,110,0.1)", margin: "6px 0 12px" }} />}
+          </div>
+        ))}
+      </div>
+
+      {/* Note */}
+      <div style={{ marginBottom: "28px" }}>
+        <SectionLabel>A NOTE FROM TODAY (optional)</SectionLabel>
+        <input type="text" value={note} onChange={e => setNote(e.target.value)} maxLength={80}
+          placeholder="a few words from today..."
+          style={{ width: "100%", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "8px", color: T.text, fontFamily: T.fontDisplay, fontSize: "15px", fontStyle: "italic", padding: "13px 16px", outline: "none" }}
+          onFocus={e => e.currentTarget.style.borderColor = T.goldBorderHi}
+          onBlur={e => e.currentTarget.style.borderColor = T.goldBorder} />
+      </div>
+
+      <button onClick={handleSave} disabled={saving || !allScored}
+        style={{ width: "100%", padding: "18px", background: allScored ? T.gold : "rgba(200,169,110,0.3)", border: "none", color: "#FFFFFF", borderRadius: "8px", cursor: allScored && !saving ? "pointer" : "not-allowed", fontFamily: T.fontDisplay, fontSize: "19px", fontWeight: "500", letterSpacing: "0.06em" }}>
+        {saving ? "Saving..." : isEdit ? "Update Pulse" : "Log Pulse"}
+      </button>
+      {!allScored && <p style={{ textAlign: "center", fontSize: "11px", color: T.textMeta, marginTop: "8px", fontStyle: "italic" }}>{7 - scoredCount} domain{7 - scoredCount !== 1 ? "s" : ""} remaining</p>}
+    </div>
+  );
+}
+
+// ============================================================
+// WEEKLY PULSE PICKER (expandable)
 // ============================================================
 
 function HorizonScalePicker({ domain, value, onChange }) {
   const [expanded, setExpanded] = useState(false);
   const selected = getScaleEntry(value);
   return (
-    <div style={{ marginBottom: "12px", border: `1px solid ${expanded ? T.goldBorderHi : T.goldBorder}`, borderRadius: "10px", overflow: "hidden", transition: "border-color 0.2s", background: T.card, boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
+    <div style={{ marginBottom: "12px", border: `1px solid ${expanded ? T.goldBorderHi : T.goldBorder}`, borderRadius: "10px", overflow: "hidden", background: T.card, boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
       <div onClick={() => setExpanded(!expanded)} style={{ padding: "16px 20px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px" }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontFamily: T.fontDisplay, fontSize: "19px", fontWeight: "600", color: T.text }}>{domain.label}</div>
@@ -442,7 +695,7 @@ function HorizonScalePicker({ domain, value, onChange }) {
       )}
       {expanded && (
         <div style={{ borderTop: "1px solid rgba(200,169,110,0.15)", maxHeight: "400px", overflowY: "auto" }}>
-          <div style={{ padding: "10px 16px 6px", fontSize: "9px", color: T.textMeta, letterSpacing: "0.18em" }}>READ EACH LEVEL — SELECT WHERE YOU RECOGNISE YOURSELF TODAY</div>
+          <div style={{ padding: "10px 16px 6px", fontSize: "9px", color: T.textMeta, letterSpacing: "0.18em" }}>READ EACH LEVEL — SELECT WHERE YOU RECOGNISE YOURSELF</div>
           {HORIZON_SCALE.map(entry => {
             const isSel = value === entry.value;
             return (
@@ -478,12 +731,12 @@ function HistoryCard({ entry, expanded, onExpand }) {
     <div onClick={onExpand} style={{ border: `1px solid ${expanded ? T.goldBorderHi : T.goldBorder}`, borderRadius: "10px", overflow: "hidden", marginBottom: "10px", background: T.card, cursor: "pointer", transition: "border-color 0.2s", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
       <div style={{ padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <div style={{ fontFamily: T.fontDisplay, fontSize: "17px", color: T.text, fontWeight: "600" }}>{formatDate(entry.date)}</div>
-          {entry.oneThingDomain && <div style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic", marginTop: "3px" }}>Focus: {DOMAINS.find(d => d.key === entry.oneThingDomain)?.label}</div>}
+          <div style={{ fontFamily: T.fontDisplay, fontSize: "17px", color: T.text, fontWeight: "600" }}>{entry.weekLabel || formatDate(entry.date || entry.weekId)}</div>
+          {entry.focusDomain && <div style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic", marginTop: "3px" }}>Focus: {DOMAINS.find(d => d.key === entry.focusDomain)?.label}</div>}
         </div>
         <div style={{ textAlign: "right" }}>
-          <div style={{ fontFamily: T.fontDisplay, fontSize: "30px", color: getTierColor(parseFloat(avg)), fontWeight: "700", lineHeight: 1 }}>{avg}</div>
-          <div style={{ fontSize: "10px", color: T.textMeta, letterSpacing: "0.08em", marginTop: "2px" }}>{getScaleEntry(parseFloat(avg))?.tier}</div>
+          <div style={{ fontFamily: T.fontDisplay, fontSize: "30px", color: getTierColor(avg), fontWeight: "700", lineHeight: 1 }}>{avg}</div>
+          <div style={{ fontSize: "10px", color: T.textMeta, letterSpacing: "0.08em", marginTop: "2px" }}>{getScaleEntry(avg)?.tier}</div>
         </div>
       </div>
       {expanded && (
@@ -498,7 +751,7 @@ function HistoryCard({ entry, expanded, onExpand }) {
                     <span style={{ fontSize: "11px", color: getTierColor(entry.scores[d.key]), fontWeight: "bold" }}>{entry.scores[d.key]} · {getScaleEntry(entry.scores[d.key])?.tier}</span>
                   </div>
                   <div style={{ height: "2px", background: "rgba(200,169,110,0.15)", borderRadius: "1px" }}>
-                    <div style={{ height: "100%", width: `${entry.scores[d.key] * 10}%`, background: getTierColor(entry.scores[d.key]), borderRadius: "1px" }} />
+                    <div style={{ height: "100%", width: `${(entry.scores[d.key] || 0) * 10}%`, background: getTierColor(entry.scores[d.key]), borderRadius: "1px" }} />
                   </div>
                 </div>
               ))}
@@ -518,122 +771,35 @@ function HistoryCard({ entry, expanded, onExpand }) {
 }
 
 // ============================================================
-// DAILY DOMAIN PICKER — hybrid: collapsed by default, expandable
+// SCAFFOLD CARDS — Monthly / Quarterly / Yearly
 // ============================================================
 
-function DailyDomainPicker({ domain, value, onChange }) {
-  const [expanded, setExpanded] = useState(false);
-  const selected = getScaleEntry(value);
+function ScaffoldCard({ title, label, status, completedAt, onStart }) {
+  const statusConfig = {
+    locked_early: { text: "Not yet available", color: T.textMeta, action: false },
+    available:    { text: "Available now",      color: T.gold,     action: true  },
+    completed:    { text: "Completed",          color: T.blue,     action: false },
+    closed:       { text: "Window closed",      color: T.amber,    action: false },
+  };
+  const cfg = statusConfig[completedAt ? "completed" : status] || statusConfig.locked_early;
 
   return (
-    <div style={{ marginBottom: "8px", border: `1px solid ${expanded ? T.goldBorderHi : T.goldBorder}`, borderRadius: "10px", overflow: "hidden", background: T.card, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-      {/* Collapsed row */}
-      <div onClick={() => setExpanded(!expanded)}
-        style={{ padding: "13px 18px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
-        <div style={{ fontFamily: T.fontDisplay, fontSize: "16px", fontWeight: "600", color: T.text }}>{domain.label}</div>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-          {value !== null ? (
-            <>
-              <span style={{ fontSize: "11px", color: getTierColor(value), fontStyle: "italic" }}>{selected?.tier}</span>
-              <span style={{ fontFamily: T.fontDisplay, fontSize: "22px", fontWeight: "700", color: getTierColor(value), lineHeight: 1 }}>{value}</span>
-            </>
-          ) : (
-            <span style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic" }}>tap to score</span>
-          )}
-          <span style={{ color: T.textMeta, fontSize: "10px" }}>{expanded ? "▲" : "▼"}</span>
-        </div>
-      </div>
-
-      {/* Expanded level list */}
-      {expanded && (
-        <div style={{ borderTop: "1px solid rgba(200,169,110,0.15)", maxHeight: "320px", overflowY: "auto" }}>
-          <div style={{ padding: "8px 16px 4px", fontSize: "9px", color: T.textMeta, letterSpacing: "0.18em" }}>READ THE LEVELS — CHOOSE THE ONE THAT MATCHES TODAY</div>
-          {HORIZON_SCALE.map(entry => {
-            const isSel = value === entry.value;
-            return (
-              <div key={entry.value} onClick={() => { onChange(entry.value); setExpanded(false); }}
-                style={{ padding: "10px 16px", cursor: "pointer", borderBottom: "1px solid rgba(200,169,110,0.08)", background: isSel ? "rgba(200,169,110,0.08)" : "transparent", transition: "background 0.12s", display: "flex", gap: "12px", alignItems: "flex-start" }}
-                onMouseEnter={e => { if (!isSel) e.currentTarget.style.background = "rgba(200,169,110,0.04)"; }}
-                onMouseLeave={e => { if (!isSel) e.currentTarget.style.background = "transparent"; }}>
-                <div style={{ flexShrink: 0, textAlign: "center", minWidth: "38px" }}>
-                  <div style={{ fontFamily: T.fontDisplay, fontSize: "18px", fontWeight: "700", color: getTierColor(entry.value), lineHeight: 1 }}>{entry.value}</div>
-                  <div style={{ fontSize: "8px", color: getTierColor(entry.value), opacity: 0.8, marginTop: "2px" }}>{entry.tier}</div>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: T.fontDisplay, fontSize: "13px", fontWeight: "600", color: T.text, marginBottom: "2px" }}>{entry.label}</div>
-                  <div style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic", lineHeight: 1.5 }}>{entry.description}</div>
-                </div>
-                {isSel && <div style={{ color: getTierColor(entry.value), fontSize: "13px", flexShrink: 0, marginTop: "3px" }}>✓</div>}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ============================================================
-// DAILY CHECK-IN
-// ============================================================
-
-function DailyCheckIn({ onSave, onClose }) {
-  const [scores, setScores] = useState(Object.fromEntries(DOMAINS.map(d => [d.key, null])));
-  const [note, setNote] = useState("");
-  const [saving, setSaving] = useState(false);
-  const scoredCount = DOMAINS.filter(d => scores[d.key] !== null).length;
-  const allScored = scoredCount === DOMAINS.length;
-  const dailyAvg = allScored ? calcAvg(Object.fromEntries(DOMAINS.map(d => [d.key, scores[d.key]]))) : null;
-
-  async function handleSave() {
-    setSaving(true);
-    await onSave({ date: new Date().toISOString(), type: "daily", scores, note });
-    setSaving(false);
-  }
-
-  return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "28px" }}>
-        <button onClick={onClose} style={{ background: "none", border: `1px solid ${T.goldBorder}`, color: T.textMeta, padding: "7px 14px", borderRadius: "4px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em" }}>← BACK</button>
+    <div style={{ padding: "18px 20px", border: `1px solid ${cfg.action ? T.goldBorderHi : T.goldBorder}`, borderRadius: "10px", background: T.card, boxShadow: "0 1px 4px rgba(0,0,0,0.05)", marginBottom: "10px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <div style={{ fontFamily: T.fontDisplay, fontSize: "26px", color: T.text, fontWeight: "400" }}>Check Your Pulse</div>
-          <div style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic", marginTop: "2px" }}>{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</div>
+          <div style={{ fontFamily: T.fontDisplay, fontSize: "18px", fontWeight: "600", color: T.text }}>{title}</div>
+          <div style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic", marginTop: "3px" }}>{label}</div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: "11px", color: cfg.color, fontWeight: "600", letterSpacing: "0.08em" }}>{cfg.text}</div>
+          {cfg.action && (
+            <button onClick={onStart} style={{ marginTop: "8px", padding: "8px 16px", background: T.gold, border: "none", color: "#FFF", borderRadius: "6px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em" }}>
+              BEGIN →
+            </button>
+          )}
+          {completedAt && <div style={{ fontSize: "10px", color: T.textMeta, marginTop: "4px" }}>{formatDate(completedAt)}</div>}
         </div>
       </div>
-
-      {/* Progress + live avg */}
-      <div style={{ marginBottom: "20px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-          <span style={{ fontSize: "10px", color: T.gold, letterSpacing: "0.12em", fontWeight: "600" }}>{scoredCount} OF {DOMAINS.length}</span>
-          {dailyAvg && <span style={{ fontFamily: T.fontDisplay, fontSize: "14px", color: getTierColor(parseFloat(dailyAvg)), fontWeight: "600" }}>{dailyAvg} · {getScaleEntry(parseFloat(dailyAvg))?.tier}</span>}
-        </div>
-        <div style={{ height: "2px", background: "rgba(200,169,110,0.15)", borderRadius: "1px" }}>
-          <div style={{ height: "100%", width: `${(scoredCount / DOMAINS.length) * 100}%`, background: T.gold, borderRadius: "1px", transition: "width 0.3s ease" }} />
-        </div>
-      </div>
-
-      <p style={{ fontSize: "12px", color: T.textMeta, fontStyle: "italic", marginBottom: "18px", lineHeight: 1.6, fontFamily: T.fontDisplay }}>
-        Read the levels and choose the one that matches today.
-      </p>
-
-      {DOMAINS.map(d => (
-        <DailyDomainPicker key={d.key} domain={d} value={scores[d.key]}
-          onChange={val => setScores(prev => ({ ...prev, [d.key]: val }))} />
-      ))}
-
-      <div style={{ marginTop: "24px", marginBottom: "28px" }}>
-        <SectionLabel>A NOTE FROM TODAY (optional)</SectionLabel>
-        <input type="text" value={note} onChange={e => setNote(e.target.value)} maxLength={80}
-          placeholder="scattered / present / something shifting..."
-          style={{ width: "100%", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "8px", color: T.text, fontFamily: T.fontDisplay, fontSize: "15px", fontStyle: "italic", padding: "13px 16px", outline: "none" }}
-          onFocus={e => { e.currentTarget.style.borderColor = T.goldBorderHi; }}
-          onBlur={e => { e.currentTarget.style.borderColor = T.goldBorder; }} />
-      </div>
-
-      <button onClick={handleSave} disabled={saving}
-        style={{ width: "100%", padding: "18px", background: T.gold, border: "none", color: "#FFFFFF", borderRadius: "8px", cursor: saving ? "wait" : "pointer", fontFamily: T.fontDisplay, fontSize: "19px", fontWeight: "500", letterSpacing: "0.06em", opacity: saving ? 0.6 : 1 }}>
-        {saving ? "Saving..." : "Log Pulse"}
-      </button>
     </div>
   );
 }
@@ -643,91 +809,124 @@ function DailyCheckIn({ onSave, onClose }) {
 // ============================================================
 
 export default function App() {
-  const [view, setView] = useState("intro");
-  const [scores, setScores] = useState(Object.fromEntries(DOMAINS.map(d => [d.key, null])));
-  const [sayMore, setSayMore] = useState(Object.fromEntries(DOMAINS.map(d => [d.key, ""])));
-  const [reflection, setReflection] = useState("");
-  const [oneThingDomain, setOneThingDomain] = useState("");
-  const [data, setData] = useState({ weekly: [], daily: [] });
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [view, setView]         = useState("home");
+  const [data, setData]         = useState(emptyData());
+  const [loading, setLoading]   = useState(true);
   const [expandedHistory, setExpandedHistory] = useState(null);
-  const [agentText, setAgentText] = useState("");
+
+  // Weekly state
+  const [wScores, setWScores]           = useState(Object.fromEntries(DOMAINS.map(d => [d.key, null])));
+  const [wSayMore, setWSayMore]         = useState(Object.fromEntries(DOMAINS.map(d => [d.key, ""])));
+  const [wReflection, setWReflection]   = useState("");
+  const [wFocusDomain, setWFocusDomain] = useState("");
+  const [wSaving, setWSaving]           = useState(false);
+  const [wSaved, setWSaved]             = useState(null);
+
+  // Agent state
+  const [agentText, setAgentText]       = useState("");
   const [agentLoading, setAgentLoading] = useState(false);
-  const [agentError, setAgentError] = useState("");
-  const [savedEntry, setSavedEntry] = useState(null);
+  const [agentError, setAgentError]     = useState("");
 
-  const completedScores = Object.fromEntries(DOMAINS.map(d => [d.key, scores[d.key] ?? 5]));
-  const allScored = DOMAINS.every(d => scores[d.key] !== null);
-  const scoredCount = DOMAINS.filter(d => scores[d.key] !== null).length;
-  const avg = allScored ? calcAvg(completedScores) : null;
-  const insights = getInsights(data.weekly);
+  const now = new Date();
+  const todayStr   = getLocalDateStr(now);
+  const weekId     = getWeekId(now);
+  const weekLabel  = `Week of ${getWeekRange(now)}`;
+  const monthId    = getMonthId(now);
+  const quarterId  = getQuarterId(now);
+  const yearId     = getYearId(now);
 
-  useEffect(() => { loadData().then(d => { setData(d); setLoading(false); }); }, []);
+  const weeklyStatus   = getWeeklyPulseStatus(now);
+  const monthlyStatus  = getMonthlyPulseStatus(now);
+  const quarterlyStatus= getQuarterlyPulseStatus(now);
+  const yearlyStatus   = getYearlyPulseStatus(now);
+
+  const todayPulse      = getTodaysPulse(data.daily, now);
+  const dailyThisWeek   = getDailyThisWeek(data.daily, now);
+  const weeklyThisWeek  = (data.weekly || []).find(e => e.weekId === weekId);
+  const monthlyThisMonth= (data.monthly || []).find(e => e.monthId === monthId);
+  const quarterlyThisQ  = (data.quarterly || []).find(e => e.quarterId === quarterId);
+  const yearlyThisYear  = (data.yearly || []).find(e => e.yearId === yearId);
+
+  const wAllScored = DOMAINS.every(d => wScores[d.key] !== null);
+  const wScoredCount = DOMAINS.filter(d => wScores[d.key] !== null).length;
+  const wAvg = wAllScored ? calcAvg(Object.fromEntries(DOMAINS.map(d => [d.key, wScores[d.key] ?? 5]))) : null;
+  const wCompletedScores = Object.fromEntries(DOMAINS.map(d => [d.key, wScores[d.key] ?? 5]));
+  const insights = getInsights(data.weekly || []);
+
+  useEffect(() => {
+    loadData().then(d => { setData(d); setLoading(false); });
+  }, []);
+
+  // ---- Handlers ----
 
   async function handleDailySave(entry) {
-    const newData = { ...data, daily: [...(data.daily || []), entry] };
+    const existing = (data.daily || []).findIndex(e => e.localDate === entry.localDate);
+    let newDaily;
+    if (existing >= 0) {
+      newDaily = [...data.daily];
+      newDaily[existing] = { ...newDaily[existing], ...entry, updatedAt: new Date().toISOString() };
+    } else {
+      newDaily = [...(data.daily || []), { ...entry, createdAt: new Date().toISOString() }];
+    }
+    const newData = { ...data, daily: newDaily };
     await saveData(newData);
     setData(newData);
-    setView("intro");
+    setView("home");
   }
 
   async function handleWeeklySave() {
-    setSaving(true);
-    const entry = { date: new Date().toISOString(), type: "weekly", scores: { ...completedScores }, sayMore: { ...sayMore }, reflection, oneThingDomain };
-    const newWeekly = [...(data.weekly || []), entry];
+    setWSaving(true);
+    const entry = {
+      weekId, weekLabel,
+      monthId, quarterId, yearId,
+      completedAt: new Date().toISOString(),
+      dailyCount: dailyThisWeek.length,
+      scores: { ...wCompletedScores },
+      sayMore: { ...wSayMore },
+      reflection: wReflection,
+      focusDomain: wFocusDomain,
+    };
+    const newWeekly = [...(data.weekly || []).filter(e => e.weekId !== weekId), entry];
     const newData = { ...data, weekly: newWeekly };
     await saveData(newData);
     setData(newData);
-    setSavedEntry(entry);
-    setView("saved");
-    setSaving(false);
+    setWSaved(entry);
+    setView("weekSaved");
+    setWSaving(false);
   }
 
   async function handleRequestReflection(entry) {
     setAgentText(""); setAgentError(""); setAgentLoading(true);
     try {
-      const recentDaily = getRecentDailyEntries(data.daily || [], 7);
-      const previousWeekly = (data.weekly || []).filter(e => e.date !== entry.date);
-      const text = await callAgent(AGENT_SYSTEM_PROMPT, buildWeeklySynthesisPrompt(entry, recentDaily, previousWeekly));
+      const daily = getDailyThisWeek(data.daily, new Date(entry.weekId));
+      const prev = (data.weekly || []).filter(e => e.weekId !== entry.weekId);
+      const text = await callAgent(AGENT_SYSTEM, buildWeeklyPrompt(entry, daily, prev));
       setAgentText(text);
-      const updatedWeekly = (data.weekly || []).map(e => e.date === entry.date ? { ...e, agentReflection: text } : e);
-      const newData = { ...data, weekly: updatedWeekly };
+      const updated = (data.weekly || []).map(e => e.weekId === entry.weekId ? { ...e, agentReflection: text, agentGeneratedAt: new Date().toISOString() } : e);
+      const newData = { ...data, weekly: updated };
       await saveData(newData);
       setData(newData);
     } catch (err) {
-      setAgentError("The reflection couldn't be generated. Check your VITE_ANTHROPIC_API_KEY in .env and try again.");
+      setAgentError("Reflection unavailable. Check your API configuration.");
     }
     setAgentLoading(false);
   }
 
-  async function handleRequestMonthlyReflection() {
-    setAgentText(""); setAgentError(""); setAgentLoading(true);
-    try {
-      const text = await callAgent(AGENT_SYSTEM_PROMPT, buildMonthlyReflectionPrompt(data.weekly, data.daily || []));
-      setAgentText(text);
-    } catch (err) {
-      setAgentError("The reflection couldn't be generated. Check your VITE_ANTHROPIC_API_KEY in .env and try again.");
-    }
-    setAgentLoading(false);
+  function resetWeekly() {
+    setWScores(Object.fromEntries(DOMAINS.map(d => [d.key, null])));
+    setWSayMore(Object.fromEntries(DOMAINS.map(d => [d.key, ""])));
+    setWReflection(""); setWFocusDomain(""); setAgentText(""); setAgentError(""); setWSaved(null);
   }
-
-  function resetForm() {
-    setScores(Object.fromEntries(DOMAINS.map(d => [d.key, null])));
-    setSayMore(Object.fromEntries(DOMAINS.map(d => [d.key, ""])));
-    setReflection(""); setOneThingDomain(""); setAgentText(""); setAgentError(""); setSavedEntry(null);
-    setView("intro");
-  }
-
-  const btnPrimary = { width: "100%", padding: "18px", background: T.gold, border: "none", color: "#FFFFFF", borderRadius: "8px", cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "19px", fontWeight: "500", letterSpacing: "0.06em" };
-  const btnSecondary = { width: "100%", padding: "14px", background: "none", border: `1px solid ${T.goldBorder}`, color: T.textMeta, borderRadius: "8px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "11px", letterSpacing: "0.1em" };
-  const btnAgent = { width: "100%", padding: "16px", background: T.card, border: `1px solid ${T.goldBorderHi}`, color: T.gold, borderRadius: "8px", cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "16px", fontWeight: "500", letterSpacing: "0.05em", boxShadow: "0 1px 4px rgba(200,169,110,0.1)" };
 
   if (loading) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: T.bg }}>
-      <div style={{ color: T.textMeta, fontFamily: T.fontBody, fontStyle: "italic" }}>Loading your records...</div>
+      <div style={{ color: T.textMeta, fontFamily: T.fontBody, fontStyle: "italic" }}>Loading your record...</div>
     </div>
   );
+
+  const btnPrimary   = { width: "100%", padding: "18px", background: T.gold, border: "none", color: "#FFFFFF", borderRadius: "8px", cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "19px", fontWeight: "500", letterSpacing: "0.06em" };
+  const btnSecondary = { width: "100%", padding: "14px", background: "none", border: `1px solid ${T.goldBorder}`, color: T.textMeta, borderRadius: "8px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "11px", letterSpacing: "0.1em" };
+  const btnAgent     = { width: "100%", padding: "16px", background: T.card, border: `1px solid ${T.goldBorderHi}`, color: T.gold, borderRadius: "8px", cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "16px", fontWeight: "500", letterSpacing: "0.05em" };
 
   return (
     <div style={{ minHeight: "100vh", background: T.bg, color: T.text, fontFamily: T.fontBody }}>
@@ -736,34 +935,24 @@ export default function App() {
 
         {/* HEADER */}
         <div style={{ marginBottom: "40px", borderBottom: `1px solid rgba(200,169,110,0.25)`, paddingBottom: "28px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div>
-            <div style={{ fontSize: "9px", letterSpacing: "0.3em", color: T.gold, marginBottom: "8px", fontWeight: "600" }}>LIFE OS</div>
-            <h1 style={{ fontFamily: T.fontDisplay, fontSize: "52px", fontWeight: "300", color: T.text, lineHeight: 1, letterSpacing: "-0.01em" }}>Pulse</h1>
-            <p style={{ fontSize: "12px", color: T.textMeta, margin: "8px 0 0", fontStyle: "italic", fontFamily: T.fontDisplay }}>The Horizon Scale self-assessment</p>
-          </div>
-          {view !== "history" && (
-            <button onClick={() => setView("history")}
-              style={{ background: T.card, border: `1px solid ${T.goldBorder}`, color: T.textMeta, padding: "9px 16px", borderRadius: "4px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.15em", flexShrink: 0, marginTop: "8px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = T.goldBorderHi; e.currentTarget.style.color = T.gold; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = T.goldBorder; e.currentTarget.style.color = T.textMeta; }}>
-              RECORD {data.weekly.length > 0 ? `(${data.weekly.length})` : ""}
-            </button>
-          )}
+          <h1 style={{ fontFamily: T.fontDisplay, fontSize: "52px", fontWeight: "300", color: T.text, lineHeight: 1, letterSpacing: "-0.01em", margin: 0 }}>
+            <span style={{ fontSize: "22px", fontWeight: "400", color: T.gold, letterSpacing: "0.01em" }}>Life OS: </span>Pulse
+          </h1>
         </div>
 
-        {/* DAILY */}
-        {view === "daily" && <DailyCheckIn onSave={handleDailySave} onClose={() => setView("intro")} />}
+        {/* DAILY CHECK-IN */}
+        {view === "daily" && (
+          <DailyCheckIn
+            existing={todayPulse}
+            onSave={handleDailySave}
+            onClose={() => setView("home")}
+          />
+        )}
 
-        {/* INTRO */}
-        {view === "intro" && (
+        {/* HOME */}
+        {view === "home" && (
           <div>
-            <div style={{ textAlign: "center", marginBottom: "36px", padding: "36px 24px", border: `1px solid ${T.goldBorder}`, borderRadius: "14px", background: T.card, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
-              <PulseWheel scores={{ path: 7, spark: 5, body: 6.5, finances: 3.5, relationships: 8, innergame: 6, outergame: 4.5 }} size={270} />
-              <p style={{ fontSize: "16px", color: T.textMeta, fontStyle: "italic", lineHeight: 1.75, margin: "24px auto 0", fontFamily: T.fontDisplay, maxWidth: "400px" }}>
-                Not a rating. A recognition.<br />Read each level and find where you actually are today.
-              </p>
-            </div>
-
+            {/* Horizon Scale card */}
             <div style={{ marginBottom: "28px", padding: "18px 22px", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "10px", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
               <SectionLabel>THE HORIZON SCALE</SectionLabel>
               {SCALE_BANDS.map(item => (
@@ -784,131 +973,213 @@ export default function App() {
               ))}
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "12px" }}>
-              {[
-                { label: "Daily Pulse", sub: "7 domains · ~40 seconds", time: "Daily", target: "daily" },
-                { label: "Weekly Pulse", sub: "Full calibration across all 7 domains", time: "Weekly", target: "scan" },
-              ].map(btn => (
-                <button key={btn.target} onClick={() => setView(btn.target)}
-                  style={{ padding: "20px 16px", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "10px", cursor: "pointer", textAlign: "left", transition: "all 0.2s", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = T.goldBorderHi; e.currentTarget.style.boxShadow = "0 2px 8px rgba(200,169,110,0.12)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = T.goldBorder; e.currentTarget.style.boxShadow = "0 1px 4px rgba(0,0,0,0.05)"; }}>
-                  <div style={{ fontFamily: T.fontDisplay, fontSize: "18px", color: T.text, fontWeight: "600", marginBottom: "4px" }}>{btn.label}</div>
-                  <div style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic", lineHeight: 1.5 }}>{btn.sub}</div>
-                  <div style={{ fontSize: "10px", color: T.gold, marginTop: "8px" }}>{btn.time}</div>
-                </button>
-              ))}
+            {/* Weekly rhythm status */}
+            <div style={{ marginBottom: "20px", padding: "16px 20px", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "10px", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
+                <div>
+                  <div style={{ fontSize: "10px", color: T.gold, letterSpacing: "0.18em", fontWeight: "600", marginBottom: "3px" }}>{weekLabel.toUpperCase()}</div>
+                  <div style={{ fontFamily: T.fontDisplay, fontSize: "14px", color: T.textMeta, fontStyle: "italic" }}>
+                    {dailyThisWeek.length} of 7 daily pulses logged
+                  </div>
+                </div>
+                <WeekDots count={dailyThisWeek.length} />
+              </div>
+              {weeklyThisWeek ? (
+                <div style={{ fontSize: "11px", color: T.blue, fontWeight: "600" }}>✓ Weekly Pulse complete</div>
+              ) : (
+                <div style={{ fontSize: "11px", color: weeklyStatus === "available" ? T.gold : T.textMeta }}>
+                  {weeklyStatus === "available"
+                    ? "Weekly Pulse available now"
+                    : `Weekly Pulse unlocks ${getWeeklyUnlockCountdown(now)}`}
+                </div>
+              )}
             </div>
 
-            {data.weekly.length >= 3 && (
+            {/* Daily + Weekly entry cards */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "28px" }}>
+              {/* Daily */}
+              <button onClick={() => setView("daily")}
+                style={{ padding: "20px 16px", background: T.card, border: `1px solid ${todayPulse ? T.goldBorderHi : T.goldBorder}`, borderRadius: "10px", cursor: "pointer", textAlign: "left", transition: "all 0.2s", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = T.goldBorderHi; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = todayPulse ? T.goldBorderHi : T.goldBorder; }}>
+                <div style={{ fontFamily: T.fontDisplay, fontSize: "18px", color: T.text, fontWeight: "600", marginBottom: "4px" }}>Daily Pulse</div>
+                <div style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic", lineHeight: 1.5 }}>7 domains · ~40 seconds</div>
+                <div style={{ fontSize: "10px", color: todayPulse ? T.blue : T.gold, marginTop: "8px", fontWeight: "600" }}>
+                  {todayPulse ? `✓ Logged · ${calcAvg(todayPulse.scores)}` : "Today"}
+                </div>
+              </button>
+
+              {/* Weekly */}
+              <button
+                onClick={() => weeklyStatus === "available" && !weeklyThisWeek && setView("weekScan")}
+                style={{ padding: "20px 16px", background: T.card, border: `1px solid ${weeklyThisWeek ? T.goldBorderHi : T.goldBorder}`, borderRadius: "10px", cursor: weeklyStatus === "available" && !weeklyThisWeek ? "pointer" : "default", textAlign: "left", transition: "all 0.2s", boxShadow: "0 1px 4px rgba(0,0,0,0.05)", opacity: weeklyStatus === "locked_early" ? 0.7 : 1 }}
+                onMouseEnter={e => { if (weeklyStatus === "available" && !weeklyThisWeek) e.currentTarget.style.borderColor = T.goldBorderHi; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = weeklyThisWeek ? T.goldBorderHi : T.goldBorder; }}>
+                <div style={{ fontFamily: T.fontDisplay, fontSize: "18px", color: T.text, fontWeight: "600", marginBottom: "4px" }}>Weekly Pulse</div>
+                <div style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic", lineHeight: 1.5 }}>Full calibration · 7 domains</div>
+                <div style={{ fontSize: "10px", marginTop: "8px", fontWeight: "600", color: weeklyThisWeek ? T.blue : weeklyStatus === "available" ? T.gold : T.textMeta }}>
+                  {weeklyThisWeek ? `✓ Complete · ${calcAvg(weeklyThisWeek.scores)}` : weeklyStatus === "available" ? "Available now" : `Unlocks ${getWeeklyUnlockCountdown(now)}`}
+                </div>
+              </button>
+            </div>
+
+            {/* Extended cadence scaffold */}
+            <Divider margin="0 0 20px" />
+            <SectionLabel>EXTENDED CADENCE</SectionLabel>
+            <ScaffoldCard
+              title="Monthly Pulse"
+              label={`${MONTH_FULL[now.getMonth()]} ${now.getFullYear()}`}
+              status={monthlyStatus}
+              completedAt={monthlyThisMonth?.completedAt}
+              onStart={() => alert("Monthly Pulse coming in the next build.")}
+            />
+            <ScaffoldCard
+              title="Quarterly Pulse"
+              label={`Q${Math.floor(now.getMonth()/3)+1} ${now.getFullYear()}`}
+              status={quarterlyStatus}
+              completedAt={quarterlyThisQ?.completedAt}
+              onStart={() => alert("Quarterly Pulse coming in the next build.")}
+            />
+            <ScaffoldCard
+              title="Yearly Pulse"
+              label={`${now.getFullYear()} Review`}
+              status={yearlyStatus}
+              completedAt={yearlyThisYear?.completedAt}
+              onStart={() => alert("Yearly Pulse coming in the next build.")}
+            />
+
+            {/* Monthly AI reflection (if enough data) */}
+            {(data.weekly || []).length >= 3 && (
               <div style={{ marginTop: "24px" }}>
                 <Divider margin="0 0 20px" />
                 <SectionLabel>MONTHLY REFLECTION</SectionLabel>
-                <button onClick={handleRequestMonthlyReflection} disabled={agentLoading} style={{ ...btnAgent, opacity: agentLoading ? 0.6 : 1 }}>
+                <button onClick={async () => {
+                  setAgentText(""); setAgentError(""); setAgentLoading(true);
+                  try {
+                    const wThisMonth = (data.weekly || []).filter(e => e.monthId === monthId);
+                    const dThisMonth = (data.daily || []).filter(e => e.monthId === monthId);
+                    const text = await callAgent(AGENT_SYSTEM, buildMonthlyPrompt({ monthLabel: `${MONTH_FULL[now.getMonth()]} ${now.getFullYear()}` }, wThisMonth, dThisMonth));
+                    setAgentText(text);
+                  } catch { setAgentError("Monthly reflection unavailable."); }
+                  setAgentLoading(false);
+                }} disabled={agentLoading} style={{ ...btnAgent, opacity: agentLoading ? 0.6 : 1 }}>
                   {agentLoading ? "Reading your record..." : "See your monthly reflection →"}
                 </button>
                 {(agentText || agentError) && <div style={{ marginTop: "16px" }}><AgentReflection text={agentText} loading={false} error={agentError} /></div>}
               </div>
             )}
 
-            {(data.weekly.length > 0 || (data.daily || []).length > 0) && (
-              <p style={{ textAlign: "center", fontSize: "11px", color: T.textMeta, fontStyle: "italic", marginTop: "20px" }}>
-                {data.weekly.length} weekly check-in{data.weekly.length !== 1 ? "s" : ""} · {(data.daily || []).length} daily signal{(data.daily || []).length !== 1 ? "s" : ""} on record
+            {/* Record button — bottom */}
+            <div style={{ marginTop: "40px" }}>
+              <Divider margin="0 0 20px" />
+              <button onClick={() => setView("history")} style={{ ...btnSecondary }}>
+                VIEW RECORD {(data.weekly || []).length > 0 ? `· ${(data.weekly||[]).length} weekly check-ins` : ""}
+              </button>
+            </div>
+
+            {/* Entry count */}
+            {((data.weekly||[]).length > 0 || (data.daily||[]).length > 0) && (
+              <p style={{ textAlign: "center", fontSize: "11px", color: T.textMeta, fontStyle: "italic", marginTop: "14px" }}>
+                {(data.weekly||[]).length} weekly · {(data.daily||[]).length} daily on record
               </p>
             )}
           </div>
         )}
 
-        {/* SCAN */}
-        {view === "scan" && (
+        {/* WEEKLY SCAN */}
+        {view === "weekScan" && (
           <div>
             <div style={{ marginBottom: "28px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-                <span style={{ fontSize: "10px", color: T.gold, letterSpacing: "0.12em", fontWeight: "600" }}>{scoredCount} OF {DOMAINS.length} DOMAINS</span>
-                <span style={{ fontSize: "10px", color: T.textMeta, letterSpacing: "0.12em" }}>{allScored ? "COMPLETE" : "IN PROGRESS"}</span>
+              <button onClick={() => setView("home")} style={{ background: "none", border: `1px solid ${T.goldBorder}`, color: T.textMeta, padding: "7px 14px", borderRadius: "4px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em", marginBottom: "16px" }}>← BACK</button>
+              <div style={{ fontSize: "9px", letterSpacing: "0.3em", color: T.gold, marginBottom: "6px", fontWeight: "600" }}>WEEKLY PULSE</div>
+              <div style={{ fontFamily: T.fontDisplay, fontSize: "13px", color: T.textMeta, fontStyle: "italic", marginBottom: "16px" }}>{weekLabel}</div>
+              {dailyThisWeek.length > 0 && (
+                <div style={{ fontSize: "11px", color: T.textMeta, marginBottom: "16px" }}>
+                  {dailyThisWeek.length} daily check-in{dailyThisWeek.length !== 1 ? "s" : ""} this week
+                </div>
+              )}
+              <div style={{ marginBottom: "6px", display: "flex", justifyContent: "space-between" }}>
+                <span style={{ fontSize: "10px", color: T.gold, letterSpacing: "0.12em", fontWeight: "600" }}>{wScoredCount} OF {DOMAINS.length}</span>
+                {wAvg && <span style={{ fontFamily: T.fontDisplay, fontSize: "14px", color: getTierColor(wAvg), fontWeight: "600" }}>{wAvg} · {getScaleEntry(wAvg)?.tier}</span>}
               </div>
-              <div style={{ height: "2px", background: "rgba(200,169,110,0.15)", borderRadius: "1px" }}>
-                <div style={{ height: "100%", width: `${(scoredCount / DOMAINS.length) * 100}%`, background: T.gold, borderRadius: "1px", transition: "width 0.4s ease" }} />
+              <div style={{ height: "2px", background: "rgba(200,169,110,0.15)", borderRadius: "1px", marginBottom: "20px" }}>
+                <div style={{ height: "100%", width: `${(wScoredCount/DOMAINS.length)*100}%`, background: T.gold, borderRadius: "1px", transition: "width 0.4s" }} />
               </div>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: "24px" }}>
+                <PulseWheel scores={wCompletedScores} size={260} />
+              </div>
+              <p style={{ fontSize: "13px", color: T.textMeta, fontStyle: "italic", textAlign: "center", marginBottom: "24px", lineHeight: 1.65, fontFamily: T.fontDisplay }}>
+                Open each domain. Read the levels.<br />Select where you recognise yourself this week.
+              </p>
             </div>
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: "28px" }}>
-              <PulseWheel scores={completedScores} size={270} />
-            </div>
-            <p style={{ fontSize: "13px", color: T.textMeta, fontStyle: "italic", textAlign: "center", marginBottom: "24px", lineHeight: 1.65, fontFamily: T.fontDisplay }}>
-              Open each domain. Read down through the levels.<br />Select where you recognise yourself today — not where you want to be.
-            </p>
             {DOMAINS.map(domain => (
-              <HorizonScalePicker key={domain.key} domain={domain} value={scores[domain.key]}
-                onChange={val => setScores(prev => ({ ...prev, [domain.key]: val }))} />
+              <HorizonScalePicker key={domain.key} domain={domain} value={wScores[domain.key]}
+                onChange={val => setWScores(prev => ({ ...prev, [domain.key]: val }))} />
             ))}
             <div style={{ marginTop: "12px" }}>
-              {allScored
-                ? <button onClick={() => setView("sayMore")} style={btnPrimary}>Continue →</button>
-                : <div style={{ textAlign: "center", padding: "16px", color: T.textMeta, fontSize: "13px", fontStyle: "italic", fontFamily: T.fontDisplay }}>{DOMAINS.length - scoredCount} domain{DOMAINS.length - scoredCount !== 1 ? "s" : ""} remaining</div>
-              }
+              {wAllScored
+                ? <button onClick={() => setView("weekSayMore")} style={btnPrimary}>Continue →</button>
+                : <div style={{ textAlign: "center", padding: "16px", color: T.textMeta, fontSize: "13px", fontStyle: "italic", fontFamily: T.fontDisplay }}>{DOMAINS.length - wScoredCount} domain{DOMAINS.length - wScoredCount !== 1 ? "s" : ""} remaining</div>}
             </div>
           </div>
         )}
 
-        {/* SAY MORE */}
-        {view === "sayMore" && (
+        {/* WEEKLY SAY MORE */}
+        {view === "weekSayMore" && (
           <div>
             <div style={{ marginBottom: "28px" }}>
               <div style={{ fontSize: "9px", letterSpacing: "0.3em", color: T.gold, marginBottom: "8px", fontWeight: "600" }}>WEEKLY PULSE</div>
               <h2 style={{ fontFamily: T.fontDisplay, fontSize: "32px", color: T.text, fontWeight: "400", margin: "0 0 6px" }}>Anything to add?</h2>
               <p style={{ fontSize: "12px", color: T.textMeta, fontStyle: "italic", lineHeight: 1.65, fontFamily: T.fontDisplay }}>
-                Optional. For any domain where a number alone doesn't capture it — say a little more.
+                Optional. Where a number alone doesn't capture it.
               </p>
             </div>
             {DOMAINS.map(d => {
-              const s = completedScores[d.key];
+              const s = wCompletedScores[d.key];
               return (
                 <div key={d.key} style={{ marginBottom: "12px", padding: "16px 18px", border: `1px solid ${T.goldBorder}`, borderRadius: "10px", background: T.card, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
                     <div style={{ fontFamily: T.fontDisplay, fontSize: "16px", fontWeight: "600", color: T.text }}>{d.label}</div>
-                    <div style={{ textAlign: "right" }}>
+                    <div>
                       <span style={{ fontFamily: T.fontDisplay, fontSize: "20px", fontWeight: "700", color: getTierColor(s) }}>{s}</span>
                       <span style={{ fontSize: "10px", color: getTierColor(s), marginLeft: "6px" }}>{getScaleEntry(s)?.tier}</span>
                     </div>
                   </div>
-                  <textarea
-                    value={sayMore[d.key]}
-                    onChange={e => setSayMore(prev => ({ ...prev, [d.key]: e.target.value }))}
-                    placeholder="What's true here today?"
+                  <textarea value={wSayMore[d.key]} onChange={e => setWSayMore(prev => ({ ...prev, [d.key]: e.target.value }))}
+                    placeholder="What's true here this week?"
                     rows={2}
                     style={{ width: "100%", background: T.bg, border: `1px solid ${T.goldBorder}`, borderRadius: "6px", color: T.text, fontFamily: T.fontDisplay, fontSize: "13px", fontStyle: "italic", padding: "10px 14px", outline: "none", lineHeight: 1.6, resize: "none" }}
                     onFocus={e => { e.currentTarget.style.borderColor = T.goldBorderHi; e.currentTarget.style.background = T.card; }}
-                    onBlur={e => { e.currentTarget.style.borderColor = T.goldBorder; e.currentTarget.style.background = T.bg; }}
-                  />
+                    onBlur={e => { e.currentTarget.style.borderColor = T.goldBorder; e.currentTarget.style.background = T.bg; }} />
                 </div>
               );
             })}
             <div style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
-              <button onClick={() => setView("reveal")} style={btnPrimary}>See Your Map →</button>
-              <button onClick={() => setView("scan")} style={btnSecondary}>← Back to scores</button>
+              <button onClick={() => setView("weekReveal")} style={btnPrimary}>See Your Map →</button>
+              <button onClick={() => setView("weekScan")} style={btnSecondary}>← Back to scores</button>
             </div>
           </div>
         )}
 
-        {/* REVEAL */}
-        {view === "reveal" && (
+        {/* WEEKLY REVEAL */}
+        {view === "weekReveal" && (
           <div>
             <div style={{ textAlign: "center", marginBottom: "36px" }}>
-              <SectionLabel>YOUR LIFE MAP TODAY</SectionLabel>
-              <PulseWheel scores={completedScores} size={310} />
+              <div style={{ fontSize: "9px", letterSpacing: "0.3em", color: T.gold, marginBottom: "8px", fontWeight: "600" }}>YOUR MAP · {weekLabel.toUpperCase()}</div>
+              <PulseWheel scores={wCompletedScores} size={310} />
               <div style={{ marginTop: "20px" }}>
-                <div style={{ fontFamily: T.fontDisplay, fontSize: "58px", fontWeight: "300", color: getTierColor(parseFloat(avg)), lineHeight: 1 }}>{avg}</div>
-                <div style={{ fontSize: "10px", color: T.textMeta, letterSpacing: "0.2em", marginTop: "6px" }}>{getScaleEntry(parseFloat(avg))?.tier?.toUpperCase()}</div>
+                <div style={{ fontFamily: T.fontDisplay, fontSize: "58px", fontWeight: "300", color: getTierColor(wAvg), lineHeight: 1 }}>{wAvg}</div>
+                <div style={{ fontSize: "10px", color: T.textMeta, letterSpacing: "0.2em", marginTop: "6px" }}>{getScaleEntry(wAvg)?.tier?.toUpperCase()}</div>
               </div>
             </div>
             <div style={{ marginBottom: "28px" }}>
               {DOMAINS.map(d => {
-                const s = completedScores[d.key];
+                const s = wCompletedScores[d.key];
                 return (
                   <div key={d.key} style={{ display: "flex", alignItems: "center", gap: "14px", padding: "10px 0", borderBottom: "1px solid rgba(200,169,110,0.15)" }}>
                     <div style={{ width: "100px", flexShrink: 0, fontFamily: T.fontDisplay, fontSize: "15px", color: T.text, fontWeight: "600" }}>{d.label}</div>
                     <div style={{ flex: 1, height: "3px", background: "rgba(200,169,110,0.15)", borderRadius: "2px" }}>
-                      <div style={{ height: "100%", width: `${s * 10}%`, background: getTierColor(s), borderRadius: "2px", transition: "width 0.5s ease" }} />
+                      <div style={{ height: "100%", width: `${s * 10}%`, background: getTierColor(s), borderRadius: "2px", transition: "width 0.5s" }} />
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0, minWidth: "110px" }}>
                       <span style={{ fontFamily: T.fontDisplay, fontSize: "18px", fontWeight: "700", color: getTierColor(s) }}>{s}</span>
@@ -927,21 +1198,21 @@ export default function App() {
             <Divider />
             <div style={{ marginBottom: "24px" }}>
               <SectionLabel>WHAT DOES YOUR MAP REVEAL? (optional)</SectionLabel>
-              <textarea value={reflection} onChange={e => setReflection(e.target.value)}
+              <textarea value={wReflection} onChange={e => setWReflection(e.target.value)}
                 placeholder="What surprises you? What doesn't? What are you ready to see clearly?"
                 rows={4}
                 style={{ width: "100%", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "8px", color: T.text, fontFamily: T.fontDisplay, fontSize: "15px", fontStyle: "italic", padding: "14px 18px", outline: "none", lineHeight: 1.65 }}
-                onFocus={e => { e.currentTarget.style.borderColor = T.goldBorderHi; }}
-                onBlur={e => { e.currentTarget.style.borderColor = T.goldBorder; }} />
+                onFocus={e => e.currentTarget.style.borderColor = T.goldBorderHi}
+                onBlur={e => e.currentTarget.style.borderColor = T.goldBorder} />
             </div>
             <div style={{ marginBottom: "32px" }}>
               <SectionLabel>IF ONE DOMAIN GETS YOUR ATTENTION THIS WEEK (optional)</SectionLabel>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                 {DOMAINS.map(d => {
-                  const s = completedScores[d.key];
-                  const active = oneThingDomain === d.key;
+                  const s = wCompletedScores[d.key];
+                  const active = wFocusDomain === d.key;
                   return (
-                    <button key={d.key} onClick={() => setOneThingDomain(active ? "" : d.key)}
+                    <button key={d.key} onClick={() => setWFocusDomain(active ? "" : d.key)}
                       style={{ padding: "12px 14px", background: active ? "rgba(200,169,110,0.1)" : T.card, border: `1px solid ${active ? T.goldBorderHi : T.goldBorder}`, borderRadius: "8px", color: active ? T.text : T.textMeta, cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "14px", textAlign: "left", transition: "all 0.15s", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
                       <div style={{ fontWeight: "600" }}>{d.label}</div>
                       <div style={{ fontSize: "11px", color: getTierColor(s), marginTop: "3px", fontStyle: "italic" }}>{s} · {getScaleEntry(s)?.tier}</div>
@@ -950,36 +1221,39 @@ export default function App() {
                 })}
               </div>
             </div>
-            <button onClick={handleWeeklySave} disabled={saving} style={{ ...btnPrimary, marginBottom: "10px", opacity: saving ? 0.6 : 1, cursor: saving ? "wait" : "pointer" }}>
-              {saving ? "Saving..." : "Save to Your Record"}
+            <button onClick={handleWeeklySave} disabled={wSaving} style={{ ...btnPrimary, marginBottom: "10px", opacity: wSaving ? 0.6 : 1 }}>
+              {wSaving ? "Saving..." : "Save to Your Record"}
             </button>
-            <button onClick={() => setView("sayMore")} style={btnSecondary}>← Adjust my assessment</button>
+            <button onClick={() => setView("weekSayMore")} style={btnSecondary}>← Adjust my assessment</button>
           </div>
         )}
 
-        {/* SAVED */}
-        {view === "saved" && savedEntry && (
+        {/* WEEKLY SAVED */}
+        {view === "weekSaved" && wSaved && (
           <div style={{ textAlign: "center" }}>
             <div style={{ fontFamily: T.fontDisplay, fontSize: "58px", fontWeight: "300", color: T.gold, marginBottom: "10px" }}>Recorded.</div>
-            <p style={{ fontSize: "16px", color: T.textMeta, fontStyle: "italic", lineHeight: 1.75, maxWidth: "380px", margin: "0 auto 36px", fontFamily: T.fontDisplay }}>
-              Your pulse is on record.<br />Return next week and watch the pattern emerge.
+            <p style={{ fontSize: "16px", color: T.textMeta, fontStyle: "italic", lineHeight: 1.75, maxWidth: "380px", margin: "0 auto 12px", fontFamily: T.fontDisplay }}>
+              {weekLabel}
             </p>
-            <PulseWheel scores={savedEntry.scores} size={270} />
-            {savedEntry.oneThingDomain && (
+            <p style={{ fontSize: "13px", color: T.textMeta, fontStyle: "italic", lineHeight: 1.75, maxWidth: "380px", margin: "0 auto 36px", fontFamily: T.fontDisplay }}>
+              Your pulse is on record. Return next week and watch the pattern emerge.
+            </p>
+            <PulseWheel scores={wSaved.scores} size={270} />
+            {wSaved.focusDomain && (
               <div style={{ marginTop: "28px", padding: "22px 28px", border: `1px solid ${T.goldBorder}`, borderRadius: "10px", display: "inline-block", minWidth: "220px", background: T.card, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
                 <div style={{ fontSize: "9px", letterSpacing: "0.22em", color: T.gold, marginBottom: "10px", fontWeight: "600" }}>YOUR FOCUS THIS WEEK</div>
-                <div style={{ fontFamily: T.fontDisplay, fontSize: "26px", color: T.text, fontWeight: "500" }}>{DOMAINS.find(d => d.key === savedEntry.oneThingDomain)?.label}</div>
-                <div style={{ fontSize: "12px", color: T.textMeta, fontStyle: "italic", marginTop: "5px", fontFamily: T.fontDisplay }}>{getScaleEntry(savedEntry.scores[savedEntry.oneThingDomain])?.label}</div>
+                <div style={{ fontFamily: T.fontDisplay, fontSize: "26px", color: T.text, fontWeight: "500" }}>{DOMAINS.find(d => d.key === wSaved.focusDomain)?.label}</div>
+                <div style={{ fontSize: "12px", color: T.textMeta, fontStyle: "italic", marginTop: "5px", fontFamily: T.fontDisplay }}>{getScaleEntry(wSaved.scores[wSaved.focusDomain])?.tier}</div>
               </div>
             )}
             <div style={{ marginTop: "32px", marginBottom: "8px" }}>
               {!agentText && !agentLoading && !agentError && (
-                <button onClick={() => handleRequestReflection(savedEntry)} style={btnAgent}>See your weekly reflection →</button>
+                <button onClick={() => handleRequestReflection(wSaved)} style={btnAgent}>See your weekly reflection →</button>
               )}
               {(agentText || agentLoading || agentError) && <AgentReflection text={agentText} loading={agentLoading} error={agentError} />}
             </div>
             <div style={{ display: "flex", gap: "12px", marginTop: "24px", justifyContent: "center" }}>
-              <button onClick={resetForm} style={{ padding: "13px 22px", background: T.card, border: `1px solid ${T.goldBorder}`, color: T.textMeta, borderRadius: "6px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em" }}>DONE</button>
+              <button onClick={() => { resetWeekly(); setView("home"); }} style={{ padding: "13px 22px", background: T.card, border: `1px solid ${T.goldBorder}`, color: T.textMeta, borderRadius: "6px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em" }}>DONE</button>
               <button onClick={() => setView("history")} style={{ padding: "13px 22px", background: T.gold, border: "none", color: "#FFFFFF", borderRadius: "6px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em" }}>VIEW MY RECORD</button>
             </div>
           </div>
@@ -989,21 +1263,21 @@ export default function App() {
         {view === "history" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "32px" }}>
-              <button onClick={() => setView("intro")} style={{ background: T.card, border: `1px solid ${T.goldBorder}`, color: T.textMeta, padding: "7px 14px", borderRadius: "4px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em" }}>← BACK</button>
+              <button onClick={() => setView("home")} style={{ background: T.card, border: `1px solid ${T.goldBorder}`, color: T.textMeta, padding: "7px 14px", borderRadius: "4px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em" }}>← BACK</button>
               <h2 style={{ fontFamily: T.fontDisplay, fontSize: "30px", color: T.text, fontWeight: "400", margin: 0 }}>Your Record</h2>
             </div>
-            {data.weekly.length === 0 ? (
-              <p style={{ color: T.textMeta, fontStyle: "italic", textAlign: "center", padding: "48px 0", fontFamily: T.fontDisplay, fontSize: "16px" }}>No check-ins yet. Complete your first Pulse to begin your record.</p>
+            {(data.weekly || []).length === 0 ? (
+              <p style={{ color: T.textMeta, fontStyle: "italic", textAlign: "center", padding: "48px 0", fontFamily: T.fontDisplay, fontSize: "16px" }}>No weekly check-ins yet. Complete your first Weekly Pulse to begin your record.</p>
             ) : (
               <>
-                {data.weekly.length > 1 && (
+                {(data.weekly || []).length > 1 && (
                   <div style={{ padding: "20px 22px", border: `1px solid ${T.goldBorder}`, borderRadius: "10px", marginBottom: "24px", background: T.card, boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
                     <SectionLabel>DOMAIN TRENDS</SectionLabel>
                     {DOMAINS.map(d => {
-                      const values = data.weekly.map(h => h.scores[d.key]);
-                      const latest = values[values.length - 1];
-                      const prev = values[values.length - 2];
-                      const trend = Math.round((latest - prev) * 2) / 2;
+                      const values = (data.weekly || []).map(h => h.scores[d.key]);
+                      const latest = values[values.length-1];
+                      const prev   = values[values.length-2];
+                      const trend  = Math.round((latest - prev) * 2) / 2;
                       return (
                         <div key={d.key} style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "10px" }}>
                           <span style={{ width: "100px", fontSize: "12px", color: T.textMeta, flexShrink: 0 }}>{d.label}</span>
@@ -1011,7 +1285,7 @@ export default function App() {
                             <div style={{ height: "100%", width: `${latest * 10}%`, background: getTierColor(latest), borderRadius: "2px" }} />
                           </div>
                           <span style={{ fontSize: "11px", color: getTierColor(latest), width: "76px", textAlign: "right" }}>{getScaleEntry(latest)?.tier}</span>
-                          <span style={{ fontSize: "12px", width: "32px", textAlign: "right", color: trend > 0 ? T.green : trend < 0 ? T.orange : T.textMeta, fontWeight: "bold" }}>
+                          <span style={{ fontSize: "12px", width: "32px", textAlign: "right", color: trend > 0 ? T.blue : trend < 0 ? T.amber : T.textMeta, fontWeight: "bold" }}>
                             {trend > 0 ? `+${trend}` : trend < 0 ? trend : "—"}
                           </span>
                         </div>
@@ -1025,7 +1299,7 @@ export default function App() {
                     {insights.map((ins, i) => <InsightCard key={i} insight={ins} />)}
                   </div>
                 )}
-                {[...data.weekly].reverse().map((entry, idx) => (
+                {[...(data.weekly || [])].reverse().map((entry, idx) => (
                   <HistoryCard key={idx} entry={entry} expanded={expandedHistory === idx}
                     onExpand={() => setExpandedHistory(expandedHistory === idx ? null : idx)} />
                 ))}
