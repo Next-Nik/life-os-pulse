@@ -72,26 +72,26 @@ const T = {
 // ============================================================
 
 const HORIZON_SCALE = [
-  { value: 10,  tier: "World-Class",  label: "Best in the World",      description: "Complete coherence. Effortless mastery, luminous presence, contribution that uplifts others. The art and the artist are one." },
-  { value: 9.5, tier: "Exemplar+",    label: "Global Standard Setter", description: "Integrated and at ease. Leads by example; influence radiates naturally." },
-  { value: 9,   tier: "Exemplar",     label: "Master of Craft",        description: "Deeply skilled, balanced, reliable. Excellence feels natural and sustainable." },
-  { value: 8.5, tier: "Fluent+",      label: "Mature Steward",         description: "Competence meets wisdom; growth through curiosity and depth." },
-  { value: 8,   tier: "Fluent",       label: "Seasoned Practitioner",  description: "Solid foundations, steady excellence, self-aware and grounded." },
-  { value: 7.5, tier: "Capable+",     label: "Evolving Practitioner",  description: "Consistent progress; confidence building through deliberate practice." },
-  { value: 7,   tier: "Capable",      label: "Reliable Contributor",   description: "Dependable, engaged, purposeful." },
-  { value: 6.5, tier: "Functional+",  label: "Rebuilding Rhythm",      description: "Mostly consistent; stabilising habits, pacing energy." },
-  { value: 6,   tier: "Functional",   label: "Managing the Basics",    description: "Competent, responsible; maintaining, sometimes fatigued." },
-  { value: 5.5, tier: "Plateau+",     label: "Reawakening",            description: "Curiosity stirring; ready to move again." },
-  { value: 5,   tier: "Plateau",      label: "Maintaining",            description: "Holding steady but uninspired; minimal expansion." },
-  { value: 4.5, tier: "Friction+",    label: "Stirring Awareness",     description: "Restless recognition that change is due." },
-  { value: 4,   tier: "Friction",     label: "Stuck but Willing",      description: "Desire present, momentum low; self-judgment softening into openness." },
-  { value: 3.5, tier: "Strain+",      label: "Fatigue and Doubt",      description: "Inconsistent, overwhelmed, starting to see the cycle." },
-  { value: 3,   tier: "Strain",       label: "Contracted",             description: "Energy collapsed inward; fear or shame active. Needs rest, not force." },
-  { value: 2.5, tier: "Crisis+",      label: "Holding On",             description: "High stress, low support; survival instincts active." },
-  { value: 2,   tier: "Crisis",       label: "Depleted",               description: "Basics unmet, clarity lost; exhaustion or anxiety chronic." },
-  { value: 1.5, tier: "Emergency+",   label: "Deep Pain / Numb",       description: "Alternating between intensity and shutdown." },
-  { value: 1,   tier: "Emergency",    label: "Disconnected",           description: "Spiritually or emotionally collapsed; light dimmed." },
-  { value: 0,   tier: "Ground Zero",  label: "Complete Reset",         description: "End of a cycle. Stillness before rebirth." },
+  { value: 10,  tier: "World-Class",  label: "Complete coherence",      description: "Effortless mastery. Luminous presence. Contribution that uplifts everyone around you. The art and the artist are one." },
+  { value: 9.5, tier: "Exemplar+",    label: "Integrated and at ease",  description: "Leading by example without effort. Influence radiates naturally. Others orient toward you." },
+  { value: 9,   tier: "Exemplar",     label: "Excellence feels natural", description: "Deeply skilled, balanced, reliable. You are not striving — you are expressing." },
+  { value: 8.5, tier: "Fluent+",      label: "Competence meets wisdom", description: "Solid and growing. You bring both skill and perspective. Depth is increasing." },
+  { value: 8,   tier: "Fluent",       label: "Steady and grounded",     description: "Strong foundations. Consistent excellence. Self-aware and calm under pressure." },
+  { value: 7.5, tier: "Capable+",     label: "Building confidence",     description: "Clear progress. Deliberate practice paying off. You can feel the momentum." },
+  { value: 7,   tier: "Capable",      label: "Dependable and engaged",  description: "Showing up reliably. Purposeful. Contributing well." },
+  { value: 6.5, tier: "Functional+",  label: "Rebuilding rhythm",       description: "Mostly consistent. Habits stabilising. Pacing yourself. Moving in the right direction." },
+  { value: 6,   tier: "Functional",   label: "Managing the basics",     description: "Holding it together. Responsible and competent. Sometimes fatigued." },
+  { value: 5.5, tier: "Plateau+",     label: "Something stirring",      description: "Curiosity returning. Not quite moving yet, but the stillness is ending." },
+  { value: 5,   tier: "Plateau",      label: "Holding steady",          description: "Maintaining without expanding. Uninspired but not in pain. The viability threshold." },
+  { value: 4.5, tier: "Friction+",    label: "Awareness of stuckness",  description: "Restless. You can feel that something needs to change. Not yet moving." },
+  { value: 4,   tier: "Friction",     label: "Stuck but willing",       description: "Desire present, momentum low. Self-judgment softening into openness." },
+  { value: 3.5, tier: "Strain+",      label: "Fatigue and doubt",       description: "Inconsistent. Overwhelmed at times. Starting to see the pattern you're in." },
+  { value: 3,   tier: "Strain",       label: "Contracted",              description: "Energy collapsed inward. Fear or shame present. Rest, not force, is what's needed." },
+  { value: 2.5, tier: "Crisis+",      label: "Holding on",              description: "High stress, low support. Survival instincts active. One day at a time." },
+  { value: 2,   tier: "Crisis",       label: "Depleted",                description: "Basics unmet. Clarity lost. Exhaustion or anxiety is chronic." },
+  { value: 1.5, tier: "Emergency+",   label: "Deep pain or numb",       description: "Alternating between intensity and shutdown. Not okay, and that is real." },
+  { value: 1,   tier: "Emergency",    label: "Disconnected",            description: "Spiritually or emotionally collapsed. The light has dimmed. Support is needed." },
+  { value: 0,   tier: "Ground Zero",  label: "Complete reset",          description: "End of a cycle. Everything cleared. Stillness before what comes next." },
 ];
 
 const DOMAINS = [
@@ -277,13 +277,15 @@ function buildWeeklySynthesisPrompt(weeklyEntry, recentDailyEntries, previousWee
 
   const domainLines = DOMAINS.map(d => {
     const s = scores[d.key];
-    return `${d.label}: ${s} (${getScaleEntry(s)?.tier})`;
+    const note = weeklyEntry.sayMore?.[d.key];
+    return `${d.label}: ${s} (${getScaleEntry(s)?.tier})${note ? ` — "${note}"` : ""}`;
   }).join("\n");
 
   const dailyLines = recentDailyEntries.length
     ? recentDailyEntries.map(e => {
         const active = BEHAVIOUR_SIGNALS.filter(s => e.signals?.[s.key]).map(s => s.label);
-        return `${formatDate(e.date)} ${formatTime(e.date)} — Energy: ${e.energy}/10 — Focus: ${DOMAINS.find(d => d.key === e.loudestDomain)?.label || "—"} — Signals: ${active.join(", ") || "none"} — "${e.word || ""}"`;
+        const domainScores = e.scores ? DOMAINS.map(d => `${d.label} ${e.scores[d.key] ?? "—"}`).join(", ") : (e.energy ? `Energy: ${e.energy}/10` : "—");
+        return `${formatDate(e.date)} — ${domainScores} — Focus: ${DOMAINS.find(d => d.key === e.loudestDomain)?.label || "—"} — Signals: ${active.join(", ") || "none"} — "${e.note || e.word || ""}"`;
       }).join("\n")
     : "No daily signals this week.";
 
@@ -545,81 +547,148 @@ function HistoryCard({ entry, expanded, onExpand }) {
 }
 
 // ============================================================
+// DAILY DOMAIN PICKER — hybrid: collapsed by default, expandable
+// ============================================================
+
+function DailyDomainPicker({ domain, value, onChange }) {
+  const [expanded, setExpanded] = useState(false);
+  const selected = getScaleEntry(value);
+
+  return (
+    <div style={{ marginBottom: "8px", border: `1px solid ${expanded ? T.goldBorderHi : T.goldBorder}`, borderRadius: "10px", overflow: "hidden", background: T.card, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+      {/* Collapsed row */}
+      <div onClick={() => setExpanded(!expanded)}
+        style={{ padding: "13px 18px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
+        <div style={{ fontFamily: T.fontDisplay, fontSize: "16px", fontWeight: "600", color: T.text }}>{domain.label}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+          {value !== null ? (
+            <>
+              <span style={{ fontSize: "11px", color: getTierColor(value), fontStyle: "italic" }}>{selected?.tier}</span>
+              <span style={{ fontFamily: T.fontDisplay, fontSize: "22px", fontWeight: "700", color: getTierColor(value), lineHeight: 1 }}>{value}</span>
+            </>
+          ) : (
+            <span style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic" }}>tap to score</span>
+          )}
+          <span style={{ color: T.textMeta, fontSize: "10px" }}>{expanded ? "▲" : "▼"}</span>
+        </div>
+      </div>
+
+      {/* Expanded level list */}
+      {expanded && (
+        <div style={{ borderTop: "1px solid rgba(200,169,110,0.15)", maxHeight: "320px", overflowY: "auto" }}>
+          <div style={{ padding: "8px 16px 4px", fontSize: "9px", color: T.textMeta, letterSpacing: "0.18em" }}>READ THE LEVELS — CHOOSE THE ONE THAT MATCHES TODAY</div>
+          {HORIZON_SCALE.map(entry => {
+            const isSel = value === entry.value;
+            return (
+              <div key={entry.value} onClick={() => { onChange(entry.value); setExpanded(false); }}
+                style={{ padding: "10px 16px", cursor: "pointer", borderBottom: "1px solid rgba(200,169,110,0.08)", background: isSel ? "rgba(200,169,110,0.08)" : "transparent", transition: "background 0.12s", display: "flex", gap: "12px", alignItems: "flex-start" }}
+                onMouseEnter={e => { if (!isSel) e.currentTarget.style.background = "rgba(200,169,110,0.04)"; }}
+                onMouseLeave={e => { if (!isSel) e.currentTarget.style.background = "transparent"; }}>
+                <div style={{ flexShrink: 0, textAlign: "center", minWidth: "38px" }}>
+                  <div style={{ fontFamily: T.fontDisplay, fontSize: "18px", fontWeight: "700", color: getTierColor(entry.value), lineHeight: 1 }}>{entry.value}</div>
+                  <div style={{ fontSize: "8px", color: getTierColor(entry.value), opacity: 0.8, marginTop: "2px" }}>{entry.tier}</div>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontFamily: T.fontDisplay, fontSize: "13px", fontWeight: "600", color: T.text, marginBottom: "2px" }}>{entry.label}</div>
+                  <div style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic", lineHeight: 1.5 }}>{entry.description}</div>
+                </div>
+                {isSel && <div style={{ color: getTierColor(entry.value), fontSize: "13px", flexShrink: 0, marginTop: "3px" }}>✓</div>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
 // DAILY CHECK-IN
 // ============================================================
 
 function DailyCheckIn({ onSave, onClose }) {
-  const [energy, setEnergy] = useState(5);
+  const [scores, setScores] = useState(Object.fromEntries(DOMAINS.map(d => [d.key, null])));
   const [loudestDomain, setLoudestDomain] = useState("");
-  const [word, setWord] = useState("");
+  const [note, setNote] = useState("");
   const [signals, setSignals] = useState({});
   const [saving, setSaving] = useState(false);
   const toggleSignal = k => setSignals(prev => ({ ...prev, [k]: !prev[k] }));
+  const scoredCount = DOMAINS.filter(d => scores[d.key] !== null).length;
+  const allScored = scoredCount === DOMAINS.length;
+  const dailyAvg = allScored ? calcAvg(Object.fromEntries(DOMAINS.map(d => [d.key, scores[d.key] ?? 5]))) : null;
 
   async function handleSave() {
     setSaving(true);
-    await onSave({ date: new Date().toISOString(), type: "daily", energy, loudestDomain, word, signals });
+    await onSave({ date: new Date().toISOString(), type: "daily", scores, loudestDomain, note, signals });
     setSaving(false);
   }
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "32px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "28px" }}>
         <button onClick={onClose} style={{ background: "none", border: `1px solid ${T.goldBorder}`, color: T.textMeta, padding: "7px 14px", borderRadius: "4px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em" }}>← BACK</button>
         <div>
-          <div style={{ fontFamily: T.fontDisplay, fontSize: "26px", color: T.text, fontWeight: "400" }}>Daily Signal</div>
+          <div style={{ fontFamily: T.fontDisplay, fontSize: "26px", color: T.text, fontWeight: "400" }}>Check Your Pulse</div>
           <div style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic", marginTop: "2px" }}>{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</div>
         </div>
       </div>
 
-      {/* Energy slider */}
-      <div style={{ marginBottom: "32px", padding: "22px", border: `1px solid ${T.goldBorder}`, borderRadius: "10px", background: T.card, boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
-        <SectionLabel>OVERALL ENERGY TODAY</SectionLabel>
-        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-          <div style={{ fontFamily: T.fontDisplay, fontSize: "52px", fontWeight: "300", color: getTierColor(energy), lineHeight: 1, minWidth: "60px" }}>{energy}</div>
-          <input type="range" min="1" max="10" step="1" value={energy} onChange={e => setEnergy(parseInt(e.target.value))} style={{ flex: 1 }} />
+      {/* Progress + avg */}
+      <div style={{ marginBottom: "20px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+          <span style={{ fontSize: "10px", color: T.gold, letterSpacing: "0.12em", fontWeight: "600" }}>{scoredCount} OF {DOMAINS.length} DOMAINS</span>
+          {dailyAvg && <span style={{ fontFamily: T.fontDisplay, fontSize: "14px", color: getTierColor(parseFloat(dailyAvg)), fontWeight: "600" }}>{dailyAvg} · {getScaleEntry(parseFloat(dailyAvg))?.tier}</span>}
         </div>
-        <div style={{ fontSize: "11px", color: T.textMeta, marginTop: "10px", fontStyle: "italic" }}>
-          {energy <= 3 ? "Low — rest may be what's needed today" : energy <= 6 ? "Moderate — moving through it" : "Good — something is working"}
+        <div style={{ height: "2px", background: "rgba(200,169,110,0.15)", borderRadius: "1px" }}>
+          <div style={{ height: "100%", width: `${(scoredCount / DOMAINS.length) * 100}%`, background: T.gold, borderRadius: "1px", transition: "width 0.3s ease" }} />
         </div>
       </div>
 
+      <p style={{ fontSize: "12px", color: T.textMeta, fontStyle: "italic", marginBottom: "18px", lineHeight: 1.6, fontFamily: T.fontDisplay }}>
+        Read the levels and choose the one that matches today.
+      </p>
+
+      {/* 7 domain pickers */}
+      {DOMAINS.map(d => (
+        <DailyDomainPicker key={d.key} domain={d} value={scores[d.key]}
+          onChange={val => setScores(prev => ({ ...prev, [d.key]: val }))} />
+      ))}
+
+      <div style={{ marginTop: "24px", marginBottom: "20px" }}>
+        <SectionLabel>A NOTE FROM TODAY (optional)</SectionLabel>
+        <input type="text" value={note} onChange={e => setNote(e.target.value)} maxLength={80}
+          placeholder="scattered / present / something shifting..."
+          style={{ width: "100%", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "8px", color: T.text, fontFamily: T.fontDisplay, fontSize: "15px", fontStyle: "italic", padding: "13px 16px", outline: "none" }}
+          onFocus={e => { e.currentTarget.style.borderColor = T.goldBorderHi; }}
+          onBlur={e => { e.currentTarget.style.borderColor = T.goldBorder; }} />
+      </div>
+
       {/* Loudest domain */}
-      <div style={{ marginBottom: "28px" }}>
+      <div style={{ marginBottom: "24px" }}>
         <SectionLabel>WHAT DOMAIN IS LOUDEST TODAY? (optional)</SectionLabel>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
           {DOMAINS.map(d => (
             <button key={d.key} onClick={() => setLoudestDomain(loudestDomain === d.key ? "" : d.key)}
-              style={{ padding: "12px 14px", background: loudestDomain === d.key ? "rgba(200,169,110,0.1)" : T.card, border: `1px solid ${loudestDomain === d.key ? T.goldBorderHi : T.goldBorder}`, borderRadius: "8px", color: loudestDomain === d.key ? T.text : T.textMeta, cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "15px", fontWeight: "600", textAlign: "left", transition: "all 0.15s" }}>
+              style={{ padding: "10px 14px", background: loudestDomain === d.key ? "rgba(200,169,110,0.1)" : T.card, border: `1px solid ${loudestDomain === d.key ? T.goldBorderHi : T.goldBorder}`, borderRadius: "8px", color: loudestDomain === d.key ? T.text : T.textMeta, cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "14px", fontWeight: "600", textAlign: "left", transition: "all 0.15s" }}>
               {d.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* One word */}
-      <div style={{ marginBottom: "28px" }}>
-        <SectionLabel>ONE WORD OR SHORT PHRASE (optional)</SectionLabel>
-        <input type="text" value={word} onChange={e => setWord(e.target.value)} maxLength={40}
-          placeholder="scattered / present / something shifting..."
-          style={{ width: "100%", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "8px", color: T.text, fontFamily: T.fontDisplay, fontSize: "16px", fontStyle: "italic", padding: "14px 18px", outline: "none" }}
-          onFocus={e => { e.currentTarget.style.borderColor = T.goldBorderHi; }}
-          onBlur={e => { e.currentTarget.style.borderColor = T.goldBorder; }} />
-      </div>
-
       {/* Behaviour signals */}
       <div style={{ marginBottom: "32px" }}>
         <SectionLabel>MARK WHAT APPLIES TODAY (optional)</SectionLabel>
         {SIGNAL_GROUPS.map(group => (
-          <div key={group.label} style={{ marginBottom: "16px" }}>
+          <div key={group.label} style={{ marginBottom: "14px" }}>
             <div style={{ fontSize: "9px", color: T.textMeta, letterSpacing: "0.15em", marginBottom: "8px" }}>{group.label}</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "7px" }}>
               {group.keys.map(key => {
                 const sig = BEHAVIOUR_SIGNALS.find(s => s.key === key);
                 const active = signals[key];
                 return (
                   <button key={key} onClick={() => toggleSignal(key)}
-                    style={{ padding: "8px 14px", background: active ? "rgba(200,169,110,0.12)" : T.card, border: `1px solid ${active ? T.goldBorderHi : T.goldBorder}`, borderRadius: "20px", color: active ? T.text : T.textMeta, cursor: "pointer", fontFamily: T.fontBody, fontSize: "12px", transition: "all 0.15s" }}>
+                    style={{ padding: "7px 13px", background: active ? "rgba(200,169,110,0.12)" : T.card, border: `1px solid ${active ? T.goldBorderHi : T.goldBorder}`, borderRadius: "20px", color: active ? T.text : T.textMeta, cursor: "pointer", fontFamily: T.fontBody, fontSize: "12px", transition: "all 0.15s" }}>
                     {sig?.label}
                   </button>
                 );
@@ -644,6 +713,7 @@ function DailyCheckIn({ onSave, onClose }) {
 export default function App() {
   const [view, setView] = useState("intro");
   const [scores, setScores] = useState(Object.fromEntries(DOMAINS.map(d => [d.key, null])));
+  const [sayMore, setSayMore] = useState(Object.fromEntries(DOMAINS.map(d => [d.key, ""])));
   const [reflection, setReflection] = useState("");
   const [oneThingDomain, setOneThingDomain] = useState("");
   const [data, setData] = useState({ weekly: [], daily: [] });
@@ -672,7 +742,7 @@ export default function App() {
 
   async function handleWeeklySave() {
     setSaving(true);
-    const entry = { date: new Date().toISOString(), type: "weekly", scores: { ...completedScores }, reflection, oneThingDomain };
+    const entry = { date: new Date().toISOString(), type: "weekly", scores: { ...completedScores }, sayMore: { ...sayMore }, reflection, oneThingDomain };
     const newWeekly = [...(data.weekly || []), entry];
     const newData = { ...data, weekly: newWeekly };
     await saveData(newData);
@@ -712,6 +782,7 @@ export default function App() {
 
   function resetForm() {
     setScores(Object.fromEntries(DOMAINS.map(d => [d.key, null])));
+    setSayMore(Object.fromEntries(DOMAINS.map(d => [d.key, ""])));
     setReflection(""); setOneThingDomain(""); setAgentText(""); setAgentError(""); setSavedEntry(null);
     setView("intro");
   }
@@ -830,9 +901,49 @@ export default function App() {
             ))}
             <div style={{ marginTop: "12px" }}>
               {allScored
-                ? <button onClick={() => setView("reveal")} style={btnPrimary}>See Your Map →</button>
+                ? <button onClick={() => setView("sayMore")} style={btnPrimary}>Continue →</button>
                 : <div style={{ textAlign: "center", padding: "16px", color: T.textMeta, fontSize: "13px", fontStyle: "italic", fontFamily: T.fontDisplay }}>{DOMAINS.length - scoredCount} domain{DOMAINS.length - scoredCount !== 1 ? "s" : ""} remaining</div>
               }
+            </div>
+          </div>
+        )}
+
+        {/* SAY MORE */}
+        {view === "sayMore" && (
+          <div>
+            <div style={{ marginBottom: "28px" }}>
+              <div style={{ fontSize: "9px", letterSpacing: "0.3em", color: T.gold, marginBottom: "8px", fontWeight: "600" }}>WEEKLY PULSE</div>
+              <h2 style={{ fontFamily: T.fontDisplay, fontSize: "32px", color: T.text, fontWeight: "400", margin: "0 0 6px" }}>Anything to add?</h2>
+              <p style={{ fontSize: "12px", color: T.textMeta, fontStyle: "italic", lineHeight: 1.65, fontFamily: T.fontDisplay }}>
+                Optional. For any domain where a number alone doesn't capture it — say a little more.
+              </p>
+            </div>
+            {DOMAINS.map(d => {
+              const s = completedScores[d.key];
+              return (
+                <div key={d.key} style={{ marginBottom: "12px", padding: "16px 18px", border: `1px solid ${T.goldBorder}`, borderRadius: "10px", background: T.card, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                    <div style={{ fontFamily: T.fontDisplay, fontSize: "16px", fontWeight: "600", color: T.text }}>{d.label}</div>
+                    <div style={{ textAlign: "right" }}>
+                      <span style={{ fontFamily: T.fontDisplay, fontSize: "20px", fontWeight: "700", color: getTierColor(s) }}>{s}</span>
+                      <span style={{ fontSize: "10px", color: getTierColor(s), marginLeft: "6px" }}>{getScaleEntry(s)?.tier}</span>
+                    </div>
+                  </div>
+                  <textarea
+                    value={sayMore[d.key]}
+                    onChange={e => setSayMore(prev => ({ ...prev, [d.key]: e.target.value }))}
+                    placeholder="What's true here today?"
+                    rows={2}
+                    style={{ width: "100%", background: T.bg, border: `1px solid ${T.goldBorder}`, borderRadius: "6px", color: T.text, fontFamily: T.fontDisplay, fontSize: "13px", fontStyle: "italic", padding: "10px 14px", outline: "none", lineHeight: 1.6, resize: "none" }}
+                    onFocus={e => { e.currentTarget.style.borderColor = T.goldBorderHi; e.currentTarget.style.background = T.card; }}
+                    onBlur={e => { e.currentTarget.style.borderColor = T.goldBorder; e.currentTarget.style.background = T.bg; }}
+                  />
+                </div>
+              );
+            })}
+            <div style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
+              <button onClick={() => setView("reveal")} style={btnPrimary}>See Your Map →</button>
+              <button onClick={() => setView("scan")} style={btnSecondary}>← Back to scores</button>
             </div>
           </div>
         )}
@@ -900,7 +1011,7 @@ export default function App() {
             <button onClick={handleWeeklySave} disabled={saving} style={{ ...btnPrimary, marginBottom: "10px", opacity: saving ? 0.6 : 1, cursor: saving ? "wait" : "pointer" }}>
               {saving ? "Saving..." : "Save to Your Record"}
             </button>
-            <button onClick={() => setView("scan")} style={btnSecondary}>← Adjust my assessment</button>
+            <button onClick={() => setView("sayMore")} style={btnSecondary}>← Adjust my assessment</button>
           </div>
         )}
 
