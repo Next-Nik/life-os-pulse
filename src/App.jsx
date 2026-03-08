@@ -480,7 +480,7 @@ function AgentReflection({ text, loading, error }) {
 // PULSE WHEEL — tappable domain labels open a popup card
 // ============================================================
 
-function PulseWheel({ scores, size = 320 }) {
+function PulseWheel({ scores, size = 320, hideLabels = false }) {
   const cx = size / 2, cy = size / 2, maxR = size * 0.37, n = DOMAINS.length;
 
   const getPoint = (i, s) => {
@@ -530,7 +530,9 @@ function PulseWheel({ scores, size = 320 }) {
         return (
           <g key={d.key}>
             <text x={lp.x} y={lp.y - 7} textAnchor="middle" fill="#0F1523" fontSize="11" fontFamily={T.fontDisplay} fontWeight="600">{d.label}</text>
-            <text x={lp.x} y={lp.y + 7} textAnchor="middle" fill={getTierColor(s)} fontSize="9.5" fontFamily={T.fontBody} opacity="0.85">{getScaleEntry(s)?.tier}</text>
+            {!hideLabels && (
+              <text x={lp.x} y={lp.y + 7} textAnchor="middle" fill={getTierColor(s)} fontSize="9.5" fontFamily={T.fontBody} opacity="0.85">{getScaleEntry(s)?.tier}</text>
+            )}
           </g>
         );
       })}
@@ -571,10 +573,12 @@ function HourglassPicker({ domain, onSelect }) {
               <div style={{ width: "36px", textAlign: "right", fontSize: "12px", color: isThreshold ? T.gold : T.textMeta, fontWeight: isThreshold ? "700" : "400", fontFamily: T.fontDisplay, flexShrink: 0 }}>
                 {n}
               </div>
-              {/* button with hairline rule through centre */}
-              <div style={{ flex: 1, display: "flex", justifyContent: "center", position: "relative" }}>
-                {/* hairline guide rule — full width, behind button */}
-                <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: "1px", background: "rgba(0,0,0,0.06)", transform: "translateY(-50%)", pointerEvents: "none", zIndex: 0 }} />
+              {/* button with hairline stubs only visible outside */}
+              <div style={{ flex: 1, display: "flex", justifyContent: "center", position: "relative", alignItems: "center" }}>
+                {/* left stub */}
+                <div style={{ position: "absolute", top: "50%", left: 0, width: `calc((100% - ${w}%) / 2 - 1px)`, height: "1px", background: "rgba(0,0,0,0.08)", transform: "translateY(-50%)", pointerEvents: "none" }} />
+                {/* right stub */}
+                <div style={{ position: "absolute", top: "50%", right: 0, width: `calc((100% - ${w}%) / 2 - 1px)`, height: "1px", background: "rgba(0,0,0,0.08)", transform: "translateY(-50%)", pointerEvents: "none" }} />
                 <button
                   onClick={() => onSelect(n)}
                   style={{
@@ -805,7 +809,7 @@ function DailyCheckIn({ existing, onSave, onClose }) {
 
           <button onClick={handleSave} disabled={saving}
             style={{ width: "100%", padding: "18px", background: T.gold, border: "none", color: "#FFFFFF", borderRadius: "8px", cursor: saving ? "wait" : "pointer", fontFamily: T.fontDisplay, fontSize: "19px", fontWeight: "500", letterSpacing: "0.06em" }}>
-            {saving ? "Saving..." : isEdit ? "Update Pulse" : "Log Pulse"}
+            {saving ? "Saving..." : isEdit ? "Update Pulse" : "Log your Pulse for the day"}
           </button>
         </div>
       )}
@@ -1029,21 +1033,38 @@ export default function App() {
   const [savedDailyEntry, setSavedDailyEntry] = useState(null);
 
   async function handleDailySave(entry) {
-    const existing = (data.daily || []).findIndex(e => e.localDate === entry.localDate);
+    // Recompute date fields at save time to avoid stale closure
+    const saveTime = new Date();
+    const freshEntry = {
+      ...entry,
+      localDate: getLocalDateStr(saveTime),
+      weekId:    getWeekId(saveTime),
+      monthId:   getMonthId(saveTime),
+      quarterId: getQuarterId(saveTime),
+      yearId:    getYearId(saveTime),
+      timestamp: saveTime.toISOString(),
+    };
+    const existing = (data.daily || []).findIndex(e => e.localDate === freshEntry.localDate);
     let newDaily;
     if (existing >= 0) {
       newDaily = [...data.daily];
-      newDaily[existing] = { ...newDaily[existing], ...entry, updatedAt: new Date().toISOString() };
+      newDaily[existing] = { ...newDaily[existing], ...freshEntry, updatedAt: saveTime.toISOString() };
     } else {
-      newDaily = [...(data.daily || []), { ...entry, createdAt: new Date().toISOString() }];
+      newDaily = [...(data.daily || []), { ...freshEntry, createdAt: saveTime.toISOString() }];
     }
     const newData = { ...data, daily: newDaily };
-    const saved = await saveData(newData);
-    if (saved) {
-      setData(newData);
-      setSavedDailyEntry(entry);
-      setView("dailySaved");
+    // Write to localStorage first, verify it round-trips
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+      const verify = localStorage.getItem(STORAGE_KEY);
+      if (!verify) throw new Error("verify failed");
+    } catch (e) {
+      alert("Save failed — please try again. If this keeps happening, check your browser storage settings.");
+      return;
     }
+    setData(newData);
+    setSavedDailyEntry(freshEntry);
+    setView("dailySaved");
   }
 
   async function handleWeeklySave() {
@@ -1179,7 +1200,7 @@ export default function App() {
                     </div>
                   )}
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <PulseWheel scores={displayScores} size={300} />
+                    <PulseWheel scores={displayScores} size={300} hideLabels={!hasData} />
                   </div>
                   {!hasData && (
                     <p style={{ fontSize: "12px", color: T.textMeta, fontStyle: "italic", marginTop: "12px", fontFamily: T.fontDisplay, lineHeight: 1.6 }}>
@@ -1203,14 +1224,14 @@ export default function App() {
                   {item.dividerAfter ? (
                     <div style={{ margin: "8px 0" }}>
                       <div style={{ borderTop: "2px solid rgba(200,146,42,0.5)" }} />
-                      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "stretch", minHeight: "80px", padding: "0 4px" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                      <div style={{ height: "90px", display: "flex", flexDirection: "column", justifyContent: "center", gap: "6px", padding: "0 4px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                           <span style={{ fontSize: "13px", color: item.color, fontFamily: T.fontDisplay, fontWeight: "500" }}>{item.label}</span>
                           <span style={{ fontSize: "11px", color: T.textMeta }}>{item.range}</span>
                         </div>
                         <div style={{ textAlign: "center" }}>
-                          <div style={{ fontSize: "9px", color: T.gold, letterSpacing: "0.2em", fontWeight: "700", marginBottom: "4px" }}>5 · VIABILITY THRESHOLD</div>
-                          <div style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic", fontFamily: T.fontDisplay, lineHeight: 1.5 }}>Below this line, important parts of life begin to suffer.</div>
+                          <div style={{ fontSize: "9px", color: T.gold, letterSpacing: "0.2em", fontWeight: "700", marginBottom: "3px" }}>THE PASS/FAIL MARK</div>
+                          <div style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic", fontFamily: T.fontDisplay, lineHeight: 1.5 }}>Above this you're helping. Below it, you're hurting yourself and those around you.</div>
                         </div>
                       </div>
                       <div style={{ borderTop: "2px solid rgba(200,146,42,0.5)" }} />
