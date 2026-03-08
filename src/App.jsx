@@ -44,11 +44,11 @@ async function saveData(data) {
 // ============================================================
 
 const T = {
-  gold:         "#C8A96E",
-  goldMid:      "#B8943A",
-  goldFaint:    "rgba(200,169,110,0.10)",
-  goldBorder:   "rgba(200,169,110,0.25)",
-  goldBorderHi: "rgba(200,169,110,0.55)",
+  gold:         "#C8922A",   // matched to logo gold — warm, rich
+  goldMid:      "#B8821A",
+  goldFaint:    "rgba(200,146,42,0.10)",
+  goldBorder:   "rgba(200,146,42,0.25)",
+  goldBorderHi: "rgba(200,146,42,0.55)",
   bg:           "#FAFAF7",
   text:         "#0F1523",   // near-black dark blue — matches indigo
   textBody:     "#4A4A4A",
@@ -430,7 +430,7 @@ const css = `
   body { background: #FAFAF7; color: #1A1A1A; }
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: rgba(200,169,110,0.35); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb { background: rgba(200,146,42,0.35); border-radius: 2px; }
   textarea { resize: vertical; }
   ::placeholder { color: #BBAB90; font-style: italic; }
 `;
@@ -444,7 +444,7 @@ function SectionLabel({ children }) {
 }
 
 function Divider({ margin = "28px 0" }) {
-  return <div style={{ borderBottom: "1px solid rgba(200,169,110,0.3)", margin }} />;
+  return <div style={{ borderBottom: "1px solid rgba(200,146,42,0.3)", margin }} />;
 }
 
 function InsightCard({ insight }) {
@@ -469,7 +469,7 @@ function AgentReflection({ text, loading, error }) {
   );
   if (!text) return null;
   return (
-    <div style={{ padding: "22px 24px", border: `1px solid ${T.goldBorderHi}`, borderRadius: "10px", background: T.card, borderLeft: `3px solid ${T.gold}`, boxShadow: "0 2px 8px rgba(200,169,110,0.08)" }}>
+    <div style={{ padding: "22px 24px", border: `1px solid ${T.goldBorderHi}`, borderRadius: "10px", background: T.card, borderLeft: `3px solid ${T.gold}`, boxShadow: "0 2px 8px rgba(200,146,42,0.08)" }}>
       <SectionLabel>YOUR REFLECTION</SectionLabel>
       <p style={{ margin: 0, fontSize: "15px", color: T.textBody, fontFamily: T.fontDisplay, fontStyle: "italic", lineHeight: 1.8 }}>{text}</p>
     </div>
@@ -506,12 +506,12 @@ function PulseWheel({ scores, size = 320 }) {
           const rad = maxR*(r/10);
           return `${cx+rad*Math.cos(a)},${cy+rad*Math.sin(a)}`;
         }).join(" ");
-        return <polygon key={r} points={pts} fill="none" stroke="rgba(200,169,110,0.2)" strokeWidth="1" />;
+        return <polygon key={r} points={pts} fill="none" stroke="rgba(200,146,42,0.2)" strokeWidth="1" />;
       })}
       {/* Spokes */}
       {DOMAINS.map((_, i) => {
         const a = (i/n)*2*Math.PI - Math.PI/2;
-        return <line key={i} x1={cx} y1={cy} x2={cx+maxR*Math.cos(a)} y2={cy+maxR*Math.sin(a)} stroke="rgba(200,169,110,0.2)" strokeWidth="1" />;
+        return <line key={i} x1={cx} y1={cy} x2={cx+maxR*Math.cos(a)} y2={cy+maxR*Math.sin(a)} stroke="rgba(200,146,42,0.2)" strokeWidth="1" />;
       })}
       {/* Glow layer */}
       <polygon points={polygonPoints} fill="none" stroke="rgba(220,175,60,0.12)" strokeWidth="4" strokeLinejoin="round" />
@@ -534,7 +534,7 @@ function PulseWheel({ scores, size = 320 }) {
           </g>
         );
       })}
-      <circle cx={cx} cy={cy} r={2.5} fill="rgba(200,169,110,0.25)" />
+      <circle cx={cx} cy={cy} r={2.5} fill="rgba(200,146,42,0.25)" />
     </svg>
   );
 }
@@ -631,7 +631,7 @@ function WeekDots({ count, total = 7 }) {
       {Array.from({ length: total }).map((_, i) => (
         <div key={i} style={{
           width: "8px", height: "8px", borderRadius: "50%",
-          background: i < count ? T.gold : "rgba(200,169,110,0.2)",
+          background: i < count ? T.gold : "rgba(200,146,42,0.2)",
           transition: "background 0.2s"
         }} />
       ))}
@@ -713,12 +713,17 @@ function DailyCheckIn({ existing, onSave, onClose }) {
         <span style={{ fontSize: "10px", color: T.gold, letterSpacing: "0.12em", fontWeight: "600" }}>{scoredCount} OF 7</span>
         {avg && <span style={{ fontFamily: T.fontDisplay, fontSize: "14px", color: getTierColor(avg), fontWeight: "600" }}>{avg} · {getScaleEntry(avg)?.tier}</span>}
       </div>
-      <div style={{ height: "2px", background: "rgba(200,169,110,0.15)", borderRadius: "1px", marginBottom: "28px" }}>
+      <div style={{ height: "2px", background: "rgba(200,146,42,0.15)", borderRadius: "1px", marginBottom: "28px" }}>
         <div style={{ height: "100%", width: `${(scoredCount/7)*100}%`, background: T.gold, borderRadius: "1px", transition: "width 0.3s" }} />
       </div>
 
       {!showNote ? (
         <>
+          {/* Live wheel — updates as you score */}
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: "24px" }}>
+            <PulseWheel scores={Object.fromEntries(DOMAINS.map(d => [d.key, scores[d.key] ?? 5]))} size={260} />
+          </div>
+
           {/* Domain tab strip */}
           <div style={{ display: "flex", gap: "6px", marginBottom: "28px", flexWrap: "wrap" }}>
             {DOMAINS.map((d, i) => {
@@ -731,7 +736,7 @@ function DailyCheckIn({ existing, onSave, onClose }) {
                     padding: "7px 12px", borderRadius: "6px", cursor: "pointer",
                     fontFamily: T.fontDisplay, fontSize: "13px", fontWeight: isActive ? "600" : "400",
                     border: isActive ? `1px solid ${T.goldBorderHi}` : `1px solid ${T.goldBorder}`,
-                    background: isActive ? "rgba(200,169,110,0.1)" : T.card,
+                    background: isActive ? "rgba(200,146,42,0.1)" : T.card,
                     color: isScored ? getTierColor(s) : isActive ? T.text : T.textMeta,
                     transition: "all 0.15s",
                   }}>
@@ -742,7 +747,7 @@ function DailyCheckIn({ existing, onSave, onClose }) {
           </div>
 
           {/* Active domain hourglass */}
-          <div style={{ padding: "24px 20px 28px", background: T.card, border: `1px solid ${T.goldBorderHi}`, borderRadius: "12px", boxShadow: "0 2px 8px rgba(200,169,110,0.08)" }}>
+          <div style={{ padding: "24px 20px 28px", background: T.card, border: `1px solid ${T.goldBorderHi}`, borderRadius: "12px", boxShadow: "0 2px 8px rgba(200,146,42,0.08)" }}>
             <div style={{ textAlign: "center", marginBottom: "20px" }}>
               <div style={{ fontFamily: T.fontDisplay, fontSize: "28px", fontWeight: "600", color: T.text, marginBottom: "2px" }}>
                 {currentDomain.label}
@@ -781,7 +786,7 @@ function DailyCheckIn({ existing, onSave, onClose }) {
               ))}
             </div>
             {avg && (
-              <div style={{ marginTop: "14px", paddingTop: "12px", borderTop: "1px solid rgba(200,169,110,0.2)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ marginTop: "14px", paddingTop: "12px", borderTop: "1px solid rgba(200,146,42,0.2)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontSize: "11px", color: T.textMeta }}>Overall</span>
                 <span style={{ fontFamily: T.fontDisplay, fontSize: "22px", fontWeight: "700", color: getTierColor(avg) }}>{avg} · {getScaleEntry(avg)?.tier}</span>
               </div>
@@ -849,20 +854,20 @@ function HorizonScalePicker({ domain, value, onChange }) {
         </div>
       )}
       {value !== null && !expanded && (
-        <div style={{ padding: "0 20px 14px", borderTop: "1px solid rgba(200,169,110,0.15)" }}>
+        <div style={{ padding: "0 20px 14px", borderTop: "1px solid rgba(200,146,42,0.15)" }}>
           <p style={{ fontSize: "12px", color: T.textMeta, fontStyle: "italic", lineHeight: 1.6, margin: 0 }}>"{selected?.description}"</p>
           <button onClick={e => { e.stopPropagation(); setExpanded(true); }} style={{ marginTop: "8px", background: "none", border: "none", color: T.gold, fontSize: "10px", cursor: "pointer", padding: 0, fontFamily: T.fontBody, letterSpacing: "0.12em" }}>CHANGE →</button>
         </div>
       )}
       {expanded && (
-        <div style={{ borderTop: "1px solid rgba(200,169,110,0.15)", maxHeight: "400px", overflowY: "auto" }}>
+        <div style={{ borderTop: "1px solid rgba(200,146,42,0.15)", maxHeight: "400px", overflowY: "auto" }}>
           <div style={{ padding: "10px 16px 6px", fontSize: "9px", color: T.textMeta, letterSpacing: "0.18em" }}>READ EACH LEVEL — SELECT WHERE YOU RECOGNISE YOURSELF</div>
           {HORIZON_SCALE.map(entry => {
             const isSel = value === entry.value;
             return (
               <div key={entry.value} onClick={() => { onChange(entry.value); setExpanded(false); }}
-                style={{ padding: "11px 16px", cursor: "pointer", borderBottom: "1px solid rgba(200,169,110,0.1)", background: isSel ? "rgba(200,169,110,0.08)" : "transparent", transition: "background 0.12s", display: "flex", gap: "14px", alignItems: "flex-start" }}
-                onMouseEnter={e => { if (!isSel) e.currentTarget.style.background = "rgba(200,169,110,0.04)"; }}
+                style={{ padding: "11px 16px", cursor: "pointer", borderBottom: "1px solid rgba(200,146,42,0.1)", background: isSel ? "rgba(200,146,42,0.08)" : "transparent", transition: "background 0.12s", display: "flex", gap: "14px", alignItems: "flex-start" }}
+                onMouseEnter={e => { if (!isSel) e.currentTarget.style.background = "rgba(200,146,42,0.04)"; }}
                 onMouseLeave={e => { if (!isSel) e.currentTarget.style.background = "transparent"; }}>
                 <div style={{ flexShrink: 0, textAlign: "center", minWidth: "42px" }}>
                   <div style={{ fontFamily: T.fontDisplay, fontSize: "20px", fontWeight: "700", color: getTierColor(entry.value), lineHeight: 1 }}>{entry.value}</div>
@@ -901,7 +906,7 @@ function HistoryCard({ entry, expanded, onExpand }) {
         </div>
       </div>
       {expanded && (
-        <div style={{ borderTop: "1px solid rgba(200,169,110,0.15)", padding: "20px" }}>
+        <div style={{ borderTop: "1px solid rgba(200,146,42,0.15)", padding: "20px" }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", justifyContent: "center", marginBottom: "16px" }}>
             <PulseWheel scores={entry.scores} size={200} />
             <div style={{ flex: 1, minWidth: "160px" }}>
@@ -911,7 +916,7 @@ function HistoryCard({ entry, expanded, onExpand }) {
                     <span style={{ fontSize: "11px", color: T.textMeta }}>{d.label}</span>
                     <span style={{ fontSize: "11px", color: getTierColor(entry.scores[d.key]), fontWeight: "bold" }}>{entry.scores[d.key]} · {getScaleEntry(entry.scores[d.key])?.tier}</span>
                   </div>
-                  <div style={{ height: "2px", background: "rgba(200,169,110,0.15)", borderRadius: "1px" }}>
+                  <div style={{ height: "2px", background: "rgba(200,146,42,0.15)", borderRadius: "1px" }}>
                     <div style={{ height: "100%", width: `${(entry.scores[d.key] || 0) * 10}%`, background: getTierColor(entry.scores[d.key]), borderRadius: "1px" }} />
                   </div>
                 </div>
@@ -919,7 +924,7 @@ function HistoryCard({ entry, expanded, onExpand }) {
             </div>
           </div>
           {entry.reflection && (
-            <div style={{ padding: "13px 16px", background: "rgba(200,169,110,0.05)", borderLeft: `3px solid ${T.gold}`, borderRadius: "0 6px 6px 0", marginBottom: entry.agentReflection ? "12px" : 0 }}>
+            <div style={{ padding: "13px 16px", background: "rgba(200,146,42,0.05)", borderLeft: `3px solid ${T.gold}`, borderRadius: "0 6px 6px 0", marginBottom: entry.agentReflection ? "12px" : 0 }}>
               <SectionLabel>REFLECTION</SectionLabel>
               <p style={{ margin: 0, fontSize: "13px", color: T.textBody, fontStyle: "italic", lineHeight: 1.65 }}>{entry.reflection}</p>
             </div>
@@ -1095,7 +1100,7 @@ export default function App() {
       <div style={{ maxWidth: "680px", margin: "0 auto", padding: "44px 24px 120px" }}>
 
         {/* HEADER */}
-        <div style={{ marginBottom: "40px", borderBottom: `1px solid rgba(200,169,110,0.25)`, paddingBottom: "32px", textAlign: "center" }}>
+        <div style={{ marginBottom: "40px", borderBottom: `1px solid rgba(200,146,42,0.25)`, paddingBottom: "32px", textAlign: "center" }}>
           <div style={{ marginBottom: "16px" }}>
             <img
               src="/logo.png"
@@ -1158,18 +1163,18 @@ export default function App() {
                 <div key={item.label}>
                   {item.dividerAfter ? (
                     <div style={{ margin: "8px 0" }}>
-                      <div style={{ borderTop: "2px solid rgba(200,169,110,0.5)" }} />
-                      <div style={{ padding: "14px 4px 14px" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                      <div style={{ borderTop: "2px solid rgba(200,146,42,0.5)" }} />
+                      <div style={{ padding: "16px 4px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                           <span style={{ fontSize: "13px", color: item.color, fontFamily: T.fontDisplay, fontWeight: "500" }}>{item.label}</span>
                           <span style={{ fontSize: "11px", color: T.textMeta }}>{item.range}</span>
                         </div>
-                        <div style={{ textAlign: "center" }}>
+                        <div style={{ textAlign: "center", marginTop: "10px", marginBottom: "2px" }}>
                           <div style={{ fontSize: "9px", color: T.gold, letterSpacing: "0.2em", fontWeight: "700", marginBottom: "4px" }}>5 · VIABILITY THRESHOLD</div>
                           <div style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic", fontFamily: T.fontDisplay, lineHeight: 1.5 }}>Below this line, important parts of life begin to suffer.</div>
                         </div>
                       </div>
-                      <div style={{ borderTop: "2px solid rgba(200,169,110,0.5)" }} />
+                      <div style={{ borderTop: "2px solid rgba(200,146,42,0.5)" }} />
                     </div>
                   ) : (
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0" }}>
@@ -1310,7 +1315,7 @@ export default function App() {
                 <span style={{ fontSize: "10px", color: T.gold, letterSpacing: "0.12em", fontWeight: "600" }}>{wScoredCount} OF {DOMAINS.length}</span>
                 {wAvg && <span style={{ fontFamily: T.fontDisplay, fontSize: "14px", color: getTierColor(wAvg), fontWeight: "600" }}>{wAvg} · {getScaleEntry(wAvg)?.tier}</span>}
               </div>
-              <div style={{ height: "2px", background: "rgba(200,169,110,0.15)", borderRadius: "1px", marginBottom: "20px" }}>
+              <div style={{ height: "2px", background: "rgba(200,146,42,0.15)", borderRadius: "1px", marginBottom: "20px" }}>
                 <div style={{ height: "100%", width: `${(wScoredCount/DOMAINS.length)*100}%`, background: T.gold, borderRadius: "1px", transition: "width 0.4s" }} />
               </div>
               <div style={{ display: "flex", justifyContent: "center", marginBottom: "24px" }}>
@@ -1384,9 +1389,9 @@ export default function App() {
               {DOMAINS.map(d => {
                 const s = wCompletedScores[d.key];
                 return (
-                  <div key={d.key} style={{ display: "flex", alignItems: "center", gap: "14px", padding: "10px 0", borderBottom: "1px solid rgba(200,169,110,0.15)" }}>
+                  <div key={d.key} style={{ display: "flex", alignItems: "center", gap: "14px", padding: "10px 0", borderBottom: "1px solid rgba(200,146,42,0.15)" }}>
                     <div style={{ width: "100px", flexShrink: 0, fontFamily: T.fontDisplay, fontSize: "15px", color: T.text, fontWeight: "600" }}>{d.label}</div>
-                    <div style={{ flex: 1, height: "3px", background: "rgba(200,169,110,0.15)", borderRadius: "2px" }}>
+                    <div style={{ flex: 1, height: "3px", background: "rgba(200,146,42,0.15)", borderRadius: "2px" }}>
                       <div style={{ height: "100%", width: `${s * 10}%`, background: getTierColor(s), borderRadius: "2px", transition: "width 0.5s" }} />
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0, minWidth: "110px" }}>
@@ -1421,7 +1426,7 @@ export default function App() {
                   const active = wFocusDomain === d.key;
                   return (
                     <button key={d.key} onClick={() => setWFocusDomain(active ? "" : d.key)}
-                      style={{ padding: "12px 14px", background: active ? "rgba(200,169,110,0.1)" : T.card, border: `1px solid ${active ? T.goldBorderHi : T.goldBorder}`, borderRadius: "8px", color: active ? T.text : T.textMeta, cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "14px", textAlign: "left", transition: "all 0.15s", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+                      style={{ padding: "12px 14px", background: active ? "rgba(200,146,42,0.1)" : T.card, border: `1px solid ${active ? T.goldBorderHi : T.goldBorder}`, borderRadius: "8px", color: active ? T.text : T.textMeta, cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "14px", textAlign: "left", transition: "all 0.15s", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
                       <div style={{ fontWeight: "600" }}>{d.label}</div>
                       <div style={{ fontSize: "11px", color: getTierColor(s), marginTop: "3px", fontStyle: "italic" }}>{s} · {getScaleEntry(s)?.tier}</div>
                     </button>
@@ -1489,7 +1494,7 @@ export default function App() {
                       return (
                         <div key={d.key} style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "10px" }}>
                           <span style={{ width: "100px", fontSize: "12px", color: T.textMeta, flexShrink: 0 }}>{d.label}</span>
-                          <div style={{ flex: 1, height: "3px", background: "rgba(200,169,110,0.15)", borderRadius: "2px" }}>
+                          <div style={{ flex: 1, height: "3px", background: "rgba(200,146,42,0.15)", borderRadius: "2px" }}>
                             <div style={{ height: "100%", width: `${latest * 10}%`, background: getTierColor(latest), borderRadius: "2px" }} />
                           </div>
                           <span style={{ fontSize: "11px", color: getTierColor(latest), width: "76px", textAlign: "right" }}>{getScaleEntry(latest)?.tier}</span>
