@@ -499,29 +499,29 @@ function PulseWheel({ scores, size = 320 }) {
 
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ overflow: "visible" }}>
-      {/* Grid rings */}
+      {/* Grid rings — gossamer thin */}
       {[2,4,6,8,10].map(r => {
         const pts = DOMAINS.map((_, i) => {
           const a = (i/n)*2*Math.PI - Math.PI/2;
           const rad = maxR*(r/10);
           return `${cx+rad*Math.cos(a)},${cy+rad*Math.sin(a)}`;
         }).join(" ");
-        return <polygon key={r} points={pts} fill="none" stroke="rgba(200,146,42,0.2)" strokeWidth="1" />;
+        return <polygon key={r} points={pts} fill="none" stroke="rgba(200,146,42,0.15)" strokeWidth="0.5" />;
       })}
-      {/* Spokes */}
+      {/* Spokes — gossamer thin */}
       {DOMAINS.map((_, i) => {
         const a = (i/n)*2*Math.PI - Math.PI/2;
-        return <line key={i} x1={cx} y1={cy} x2={cx+maxR*Math.cos(a)} y2={cy+maxR*Math.sin(a)} stroke="rgba(200,146,42,0.2)" strokeWidth="1" />;
+        return <line key={i} x1={cx} y1={cy} x2={cx+maxR*Math.cos(a)} y2={cy+maxR*Math.sin(a)} stroke="rgba(200,146,42,0.15)" strokeWidth="0.5" />;
       })}
       {/* Glow layer */}
-      <polygon points={polygonPoints} fill="none" stroke="rgba(220,175,60,0.12)" strokeWidth="4" strokeLinejoin="round" />
+      <polygon points={polygonPoints} fill="none" stroke="rgba(200,146,42,0.1)" strokeWidth="4" strokeLinejoin="round" />
       {/* Shape — delicate gold */}
-      <polygon points={polygonPoints} fill="rgba(220,185,80,0.06)" stroke="#E8C040" strokeWidth="0.75" strokeLinejoin="round" style={{ transition: "all 0.4s ease", filter: "drop-shadow(0 0 3px rgba(240,200,60,0.4))" }} />
-      {/* Score dots */}
+      <polygon points={polygonPoints} fill="rgba(200,146,42,0.06)" stroke="#C8922A" strokeWidth="0.75" strokeLinejoin="round" style={{ transition: "all 0.4s ease", filter: "drop-shadow(0 0 3px rgba(200,146,42,0.35))" }} />
+      {/* Score dots — warm gold */}
       {DOMAINS.map((d, i) => {
         const s = scores[d.key] ?? 5;
         const p = getPoint(i, s);
-        return <circle key={d.key} cx={p.x} cy={p.y} r={4} fill={getTierColor(s)} stroke={T.bg} strokeWidth="1.5" />;
+        return <circle key={d.key} cx={p.x} cy={p.y} r={3.5} fill="#C8922A" stroke={T.bg} strokeWidth="1.5" />;
       })}
       {/* Labels */}
       {DOMAINS.map((d, i) => {
@@ -549,9 +549,6 @@ function PulseWheel({ scores, size = 320 }) {
 
 function HourglassPicker({ domain, onSelect }) {
   const numbers = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0];
-
-  // Width curve: max at 0 and 10, min at 5
-  // Uses a parabola: width = minW + (maxW - minW) * ((n-5)/5)^2
   const minW = 38, maxW = 100;
   const getWidth = (n) => {
     const pct = Math.pow((n - 5) / 5, 2);
@@ -569,41 +566,41 @@ function HourglassPicker({ domain, onSelect }) {
           const w = getWidth(n);
           const isThreshold = n === 5;
           return (
-            <div key={n} style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%" }}>
-              {/* left label */}
-              <div style={{ width: "32px", textAlign: "right", fontSize: "11px", color: isThreshold ? T.gold : T.textMeta, fontWeight: isThreshold ? "600" : "400", flexShrink: 0 }}>
+            <div key={n} style={{ display: "flex", alignItems: "center", gap: "16px", width: "100%" }}>
+              {/* left number — more space */}
+              <div style={{ width: "36px", textAlign: "right", fontSize: "12px", color: isThreshold ? T.gold : T.textMeta, fontWeight: isThreshold ? "700" : "400", fontFamily: T.fontDisplay, flexShrink: 0 }}>
                 {n}
               </div>
-              {/* button */}
-              <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
-                {isThreshold && (
-                  <div style={{ position: "absolute", marginTop: "-10px", fontSize: "8px", color: T.gold, letterSpacing: "0.15em", fontWeight: "600", pointerEvents: "none" }} />
-                )}
+              {/* button with hairline rule through centre */}
+              <div style={{ flex: 1, display: "flex", justifyContent: "center", position: "relative" }}>
+                {/* hairline guide rule — full width, behind button */}
+                <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: "1px", background: "rgba(0,0,0,0.06)", transform: "translateY(-50%)", pointerEvents: "none", zIndex: 0 }} />
                 <button
                   onClick={() => onSelect(n)}
                   style={{
                     width: `${w}%`,
-                    height: "30px",
-                    background: `${col}22`,
-                    border: `1px solid ${col}55`,
-                    borderRadius: "4px",
+                    height: "28px",
+                    background: `${col}20`,
+                    border: `1px solid ${col}44`,
+                    borderRadius: "3px",
                     cursor: "pointer",
                     transition: "all 0.1s",
                     outline: "none",
                     position: "relative",
+                    zIndex: 1,
                   }}
                   onMouseEnter={e => {
                     e.currentTarget.style.background = col;
                     e.currentTarget.style.borderColor = col;
                   }}
                   onMouseLeave={e => {
-                    e.currentTarget.style.background = `${col}22`;
-                    e.currentTarget.style.borderColor = `${col}55`;
+                    e.currentTarget.style.background = `${col}20`;
+                    e.currentTarget.style.borderColor = `${col}44`;
                   }}
                 />
               </div>
-              {/* right: tier label at anchor points */}
-              <div style={{ width: "72px", fontSize: "9px", color: col, letterSpacing: "0.08em", flexShrink: 0 }}>
+              {/* right tier label — more space */}
+              <div style={{ width: "80px", fontSize: "10px", color: isThreshold ? T.gold : col, letterSpacing: "0.06em", flexShrink: 0, fontWeight: isThreshold ? "600" : "400" }}>
                 {n === 10 ? "World-Class" :
                  n === 9  ? "Exemplar" :
                  n === 8  ? "Fluent" :
@@ -771,6 +768,10 @@ function DailyCheckIn({ existing, onSave, onClose }) {
       ) : (
         /* Note + save step */
         <div>
+          {/* Live wheel — stays visible on summary step */}
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: "20px" }}>
+            <PulseWheel scores={Object.fromEntries(DOMAINS.map(d => [d.key, scores[d.key] ?? 5]))} size={240} />
+          </div>
           {/* Mini summary */}
           <div style={{ padding: "20px", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "12px", marginBottom: "24px", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
@@ -1025,6 +1026,8 @@ export default function App() {
 
   // ---- Handlers ----
 
+  const [savedDailyEntry, setSavedDailyEntry] = useState(null);
+
   async function handleDailySave(entry) {
     const existing = (data.daily || []).findIndex(e => e.localDate === entry.localDate);
     let newDaily;
@@ -1035,9 +1038,12 @@ export default function App() {
       newDaily = [...(data.daily || []), { ...entry, createdAt: new Date().toISOString() }];
     }
     const newData = { ...data, daily: newDaily };
-    await saveData(newData);
-    setData(newData);
-    setView("home");
+    const saved = await saveData(newData);
+    if (saved) {
+      setData(newData);
+      setSavedDailyEntry(entry);
+      setView("dailySaved");
+    }
   }
 
   async function handleWeeklySave() {
@@ -1122,6 +1128,39 @@ export default function App() {
           />
         )}
 
+        {/* DAILY SAVED */}
+        {view === "dailySaved" && savedDailyEntry && (() => {
+          const savedAvg = calcAvg(savedDailyEntry.scores);
+          return (
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: "9px", letterSpacing: "0.3em", color: T.gold, marginBottom: "12px", fontWeight: "600" }}>
+                {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }).toUpperCase()}
+              </div>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: "20px" }}>
+                <PulseWheel scores={savedDailyEntry.scores} size={300} />
+              </div>
+              <div style={{ fontFamily: T.fontDisplay, fontSize: "52px", fontWeight: "300", color: getTierColor(savedAvg), lineHeight: 1, marginBottom: "6px" }}>
+                {savedAvg}
+              </div>
+              <div style={{ fontSize: "11px", color: getTierColor(savedAvg), letterSpacing: "0.15em", fontWeight: "600", marginBottom: "4px" }}>
+                {getScaleEntry(savedAvg)?.tier?.toUpperCase()}
+              </div>
+              <div style={{ fontSize: "13px", color: T.textMeta, fontStyle: "italic", fontFamily: T.fontDisplay, marginBottom: "32px" }}>
+                {getScaleEntry(savedAvg)?.label}
+              </div>
+              {savedDailyEntry.note && (
+                <div style={{ padding: "14px 20px", border: `1px solid ${T.goldBorder}`, borderLeft: `3px solid ${T.gold}`, borderRadius: "0 8px 8px 0", background: T.card, marginBottom: "28px", textAlign: "left", maxWidth: "380px", margin: "0 auto 28px" }}>
+                  <p style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: "15px", fontStyle: "italic", color: T.textBody, lineHeight: 1.65 }}>"{savedDailyEntry.note}"</p>
+                </div>
+              )}
+              <button onClick={() => { setSavedDailyEntry(null); setView("home"); }}
+                style={{ padding: "16px 40px", background: T.gold, border: "none", color: "#FFFFFF", borderRadius: "8px", cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "18px", fontWeight: "500", letterSpacing: "0.06em" }}>
+                Done for today
+              </button>
+            </div>
+          );
+        })()}
+
         {/* HOME */}
         {view === "home" && (
           <div>
@@ -1164,12 +1203,12 @@ export default function App() {
                   {item.dividerAfter ? (
                     <div style={{ margin: "8px 0" }}>
                       <div style={{ borderTop: "2px solid rgba(200,146,42,0.5)" }} />
-                      <div style={{ padding: "16px 4px" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "stretch", minHeight: "80px", padding: "0 4px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
                           <span style={{ fontSize: "13px", color: item.color, fontFamily: T.fontDisplay, fontWeight: "500" }}>{item.label}</span>
                           <span style={{ fontSize: "11px", color: T.textMeta }}>{item.range}</span>
                         </div>
-                        <div style={{ textAlign: "center", marginTop: "10px", marginBottom: "2px" }}>
+                        <div style={{ textAlign: "center" }}>
                           <div style={{ fontSize: "9px", color: T.gold, letterSpacing: "0.2em", fontWeight: "700", marginBottom: "4px" }}>5 · VIABILITY THRESHOLD</div>
                           <div style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic", fontFamily: T.fontDisplay, lineHeight: 1.5 }}>Below this line, important parts of life begin to suffer.</div>
                         </div>
