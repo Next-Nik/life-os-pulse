@@ -1222,15 +1222,15 @@ export default function App() {
               {SCALE_BANDS.map(item => (
                 <div key={item.label}>
                   {item.dividerAfter ? (
-                    <div style={{ margin: "8px 0" }}>
+                    <div style={{ margin: "4px 0" }}>
                       <div style={{ borderTop: "2px solid rgba(200,146,42,0.5)" }} />
-                      <div style={{ height: "90px", display: "flex", flexDirection: "column", justifyContent: "center", gap: "6px", padding: "0 4px" }}>
+                      <div style={{ height: "96px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "stretch", gap: "8px", padding: "0 4px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                           <span style={{ fontSize: "13px", color: item.color, fontFamily: T.fontDisplay, fontWeight: "500" }}>{item.label}</span>
                           <span style={{ fontSize: "11px", color: T.textMeta }}>{item.range}</span>
                         </div>
-                        <div style={{ textAlign: "center" }}>
-                          <div style={{ fontSize: "9px", color: T.gold, letterSpacing: "0.2em", fontWeight: "700", marginBottom: "3px" }}>THE PASS/FAIL MARK</div>
+                        <div style={{ textAlign: "center", padding: "0 8px" }}>
+                          <div style={{ fontSize: "9px", color: T.gold, letterSpacing: "0.2em", fontWeight: "700", marginBottom: "4px" }}>THE PASS/FAIL MARK</div>
                           <div style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic", fontFamily: T.fontDisplay, lineHeight: 1.5 }}>Above this you're helping. Below it, you're hurting yourself and those around you.</div>
                         </div>
                       </div>
@@ -1533,53 +1533,159 @@ export default function App() {
         )}
 
         {/* HISTORY */}
-        {view === "history" && (
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "32px" }}>
-              <button onClick={() => setView("home")} style={{ background: T.card, border: `1px solid ${T.goldBorder}`, color: T.textMeta, padding: "7px 14px", borderRadius: "4px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em" }}>← BACK</button>
-              <h2 style={{ fontFamily: T.fontDisplay, fontSize: "30px", color: T.text, fontWeight: "400", margin: 0 }}>Your Record</h2>
-            </div>
-            {(data.weekly || []).length === 0 ? (
-              <p style={{ color: T.textMeta, fontStyle: "italic", textAlign: "center", padding: "48px 0", fontFamily: T.fontDisplay, fontSize: "16px" }}>No weekly check-ins yet. Complete your first Weekly Pulse to begin your record.</p>
-            ) : (
-              <>
-                {(data.weekly || []).length > 1 && (
-                  <div style={{ padding: "20px 22px", border: `1px solid ${T.goldBorder}`, borderRadius: "10px", marginBottom: "24px", background: T.card, boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
-                    <SectionLabel>DOMAIN TRENDS</SectionLabel>
-                    {DOMAINS.map(d => {
-                      const values = (data.weekly || []).map(h => h.scores[d.key]);
-                      const latest = values[values.length-1];
-                      const prev   = values[values.length-2];
-                      const trend  = Math.round((latest - prev) * 2) / 2;
-                      return (
-                        <div key={d.key} style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "10px" }}>
-                          <span style={{ width: "100px", fontSize: "12px", color: T.textMeta, flexShrink: 0 }}>{d.label}</span>
-                          <div style={{ flex: 1, height: "3px", background: "rgba(200,146,42,0.15)", borderRadius: "2px" }}>
-                            <div style={{ height: "100%", width: `${latest * 10}%`, background: getTierColor(latest), borderRadius: "2px" }} />
+        {view === "history" && (() => {
+          // Group daily entries by weekId, sorted newest first
+          const allDaily = [...(data.daily || [])].sort((a, b) => b.localDate.localeCompare(a.localDate));
+          const weekGroups = {};
+          allDaily.forEach(entry => {
+            const wid = entry.weekId || "unknown";
+            if (!weekGroups[wid]) weekGroups[wid] = [];
+            weekGroups[wid].push(entry);
+          });
+          const sortedWeekIds = Object.keys(weekGroups).sort((a, b) => b.localeCompare(a));
+          const hasAny = allDaily.length > 0 || (data.weekly || []).length > 0;
+
+          return (
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "32px" }}>
+                <button onClick={() => setView("home")} style={{ background: T.card, border: `1px solid ${T.goldBorder}`, color: T.textMeta, padding: "7px 14px", borderRadius: "4px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em" }}>← BACK</button>
+                <h2 style={{ fontFamily: T.fontDisplay, fontSize: "30px", color: T.text, fontWeight: "400", margin: 0 }}>Your Record</h2>
+              </div>
+
+              {!hasAny ? (
+                <p style={{ color: T.textMeta, fontStyle: "italic", textAlign: "center", padding: "48px 0", fontFamily: T.fontDisplay, fontSize: "16px" }}>Nothing logged yet. Complete your first Daily or Weekly Pulse to begin your record.</p>
+              ) : (
+                <>
+                  {/* Domain trends — only when 2+ weekly entries */}
+                  {(data.weekly || []).length > 1 && (
+                    <div style={{ padding: "20px 22px", border: `1px solid ${T.goldBorder}`, borderRadius: "10px", marginBottom: "24px", background: T.card, boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
+                      <SectionLabel>DOMAIN TRENDS</SectionLabel>
+                      {DOMAINS.map(d => {
+                        const values = (data.weekly || []).map(h => h.scores[d.key]);
+                        const latest = values[values.length-1];
+                        const prev   = values[values.length-2];
+                        const trend  = Math.round((latest - prev) * 2) / 2;
+                        return (
+                          <div key={d.key} style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "10px" }}>
+                            <span style={{ width: "100px", fontSize: "12px", color: T.textMeta, flexShrink: 0 }}>{d.label}</span>
+                            <div style={{ flex: 1, height: "3px", background: "rgba(200,146,42,0.15)", borderRadius: "2px" }}>
+                              <div style={{ height: "100%", width: `${latest * 10}%`, background: getTierColor(latest), borderRadius: "2px" }} />
+                            </div>
+                            <span style={{ fontSize: "11px", color: getTierColor(latest), width: "76px", textAlign: "right" }}>{getScaleEntry(latest)?.tier}</span>
+                            <span style={{ fontSize: "12px", width: "32px", textAlign: "right", color: trend > 0 ? T.blue : trend < 0 ? T.amber : T.textMeta, fontWeight: "bold" }}>
+                              {trend > 0 ? `+${trend}` : trend < 0 ? trend : "—"}
+                            </span>
                           </div>
-                          <span style={{ fontSize: "11px", color: getTierColor(latest), width: "76px", textAlign: "right" }}>{getScaleEntry(latest)?.tier}</span>
-                          <span style={{ fontSize: "12px", width: "32px", textAlign: "right", color: trend > 0 ? T.blue : trend < 0 ? T.amber : T.textMeta, fontWeight: "bold" }}>
-                            {trend > 0 ? `+${trend}` : trend < 0 ? trend : "—"}
-                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Insights */}
+                  {insights.length > 0 && (
+                    <div style={{ marginBottom: "22px" }}>
+                      <SectionLabel>YOUR RECORD IS NOTICING</SectionLabel>
+                      {insights.map((ins, i) => <InsightCard key={i} insight={ins} />)}
+                    </div>
+                  )}
+
+                  {/* Daily entries grouped by week */}
+                  {sortedWeekIds.map(wid => {
+                    const days = weekGroups[wid];
+                    const weeklyEntry = (data.weekly || []).find(w => w.weekId === wid);
+                    const isCurrentWeek = wid === weekId;
+                    const weekAvg = calcAvg(Object.fromEntries(
+                      DOMAINS.map(d => [d.key, days.reduce((s, e) => s + (e.scores?.[d.key] ?? 0), 0) / days.length])
+                    ));
+
+                    // label
+                    const firstDay = days[days.length - 1];
+                    const weekLabel_ = weeklyEntry?.weekLabel || (firstDay ? `Week of ${firstDay.localDate}` : wid);
+
+                    return (
+                      <div key={wid} style={{ marginBottom: "28px" }}>
+                        {/* Week header */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", paddingBottom: "8px", borderBottom: `1px solid ${T.goldBorder}` }}>
+                          <div>
+                            <div style={{ fontSize: "9px", color: T.gold, letterSpacing: "0.2em", fontWeight: "700" }}>
+                              {isCurrentWeek ? "THIS WEEK" : weekLabel_.toUpperCase()}
+                            </div>
+                            <div style={{ fontFamily: T.fontDisplay, fontSize: "13px", color: T.textMeta, fontStyle: "italic" }}>
+                              {days.length} day{days.length !== 1 ? "s" : ""} logged{weeklyEntry ? " · Weekly Pulse complete" : ""}
+                            </div>
+                          </div>
+                          <div style={{ textAlign: "right" }}>
+                            <div style={{ fontFamily: T.fontDisplay, fontSize: "22px", color: getTierColor(weekAvg), lineHeight: 1 }}>{weekAvg}</div>
+                            <div style={{ fontSize: "9px", color: getTierColor(weekAvg), letterSpacing: "0.1em" }}>{getScaleEntry(weekAvg)?.tier?.toUpperCase()}</div>
+                          </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
-                {insights.length > 0 && (
-                  <div style={{ marginBottom: "22px" }}>
-                    <SectionLabel>YOUR RECORD IS NOTICING</SectionLabel>
-                    {insights.map((ins, i) => <InsightCard key={i} insight={ins} />)}
-                  </div>
-                )}
-                {[...(data.weekly || [])].reverse().map((entry, idx) => (
-                  <HistoryCard key={idx} entry={entry} expanded={expandedHistory === idx}
-                    onExpand={() => setExpandedHistory(expandedHistory === idx ? null : idx)} />
-                ))}
-              </>
-            )}
-          </div>
-        )}
+
+                        {/* Daily cards */}
+                        {days.map((entry, di) => {
+                          const avg = calcAvg(entry.scores || {});
+                          const dateObj = new Date(entry.localDate + "T12:00:00");
+                          const dateLabel = dateObj.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
+                          return (
+                            <div key={di} style={{ marginBottom: "10px", padding: "16px 18px", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
+                                <div>
+                                  <div style={{ fontSize: "11px", color: T.gold, letterSpacing: "0.12em", fontWeight: "600", marginBottom: "2px" }}>{dateLabel.toUpperCase()}</div>
+                                  <div style={{ fontFamily: T.fontDisplay, fontSize: "13px", color: T.textMeta, fontStyle: "italic" }}>{getScaleEntry(avg)?.label}</div>
+                                </div>
+                                <div style={{ textAlign: "right" }}>
+                                  <div style={{ fontFamily: T.fontDisplay, fontSize: "28px", color: getTierColor(avg), lineHeight: 1 }}>{avg}</div>
+                                  <div style={{ fontSize: "9px", color: getTierColor(avg), letterSpacing: "0.1em" }}>{getScaleEntry(avg)?.tier?.toUpperCase()}</div>
+                                </div>
+                              </div>
+                              {/* Domain score pills */}
+                              <div style={{ display: "flex", gap: "5px", flexWrap: "wrap", marginBottom: entry.note ? "12px" : 0 }}>
+                                {DOMAINS.map(d => {
+                                  const s = entry.scores?.[d.key];
+                                  if (s == null) return null;
+                                  const col = getTierColor(s);
+                                  return (
+                                    <div key={d.key} style={{ padding: "4px 9px", background: `${col}14`, border: `1px solid ${col}33`, borderRadius: "4px" }}>
+                                      <div style={{ fontSize: "9px", color: T.textMeta, letterSpacing: "0.06em" }}>{d.label}</div>
+                                      <div style={{ fontSize: "12px", color: col, fontWeight: "600", fontFamily: T.fontDisplay }}>{s}</div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              {/* Note */}
+                              {entry.note && (
+                                <div style={{ borderLeft: `2px solid ${T.goldBorder}`, paddingLeft: "12px", marginTop: "4px" }}>
+                                  <p style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: "13px", fontStyle: "italic", color: T.textMeta, lineHeight: 1.6 }}>"{entry.note}"</p>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+
+                        {/* Weekly summary if exists */}
+                        {weeklyEntry && (
+                          <HistoryCard entry={weeklyEntry} expanded={expandedHistory === wid}
+                            onExpand={() => setExpandedHistory(expandedHistory === wid ? null : wid)} />
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {/* Weeks with only weekly (no daily) entries */}
+                  {[...(data.weekly || [])].reverse()
+                    .filter(w => !weekGroups[w.weekId])
+                    .map((entry, idx) => (
+                      <div key={idx} style={{ marginBottom: "28px" }}>
+                        <div style={{ fontSize: "9px", color: T.gold, letterSpacing: "0.2em", fontWeight: "700", marginBottom: "8px" }}>{(entry.weekLabel || entry.weekId).toUpperCase()}</div>
+                        <HistoryCard entry={entry} expanded={expandedHistory === `w${idx}`}
+                          onExpand={() => setExpandedHistory(expandedHistory === `w${idx}` ? null : `w${idx}`)} />
+                      </div>
+                    ))
+                  }
+                </>
+              )}
+            </div>
+          );
+        })()}
 
       </div>
     </div>
