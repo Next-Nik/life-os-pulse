@@ -1222,22 +1222,22 @@ export default function App() {
               {SCALE_BANDS.map(item => (
                 <div key={item.label}>
                   {item.dividerAfter ? (
-                    <div style={{ margin: "4px 0" }}>
+                    <div>
                       <div style={{ borderTop: "2px solid rgba(200,146,42,0.5)" }} />
-                      <div style={{ height: "96px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "stretch", gap: "8px", padding: "0 4px" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{ height: "90px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "stretch", padding: "0 4px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "7px" }}>
                           <span style={{ fontSize: "13px", color: item.color, fontFamily: T.fontDisplay, fontWeight: "500" }}>{item.label}</span>
                           <span style={{ fontSize: "11px", color: T.textMeta }}>{item.range}</span>
                         </div>
                         <div style={{ textAlign: "center", padding: "0 8px" }}>
-                          <div style={{ fontSize: "9px", color: T.gold, letterSpacing: "0.2em", fontWeight: "700", marginBottom: "4px" }}>THE PASS/FAIL MARK</div>
+                          <div style={{ fontSize: "9px", color: T.gold, letterSpacing: "0.2em", fontWeight: "700", marginBottom: "3px" }}>THE PASS/FAIL MARK</div>
                           <div style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic", fontFamily: T.fontDisplay, lineHeight: 1.5 }}>Above this you're helping. Below it, you're hurting yourself and those around you.</div>
                         </div>
                       </div>
                       <div style={{ borderTop: "2px solid rgba(200,146,42,0.5)" }} />
                     </div>
                   ) : (
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0" }}>
                       <span style={{ fontSize: "13px", color: item.color, fontFamily: T.fontDisplay, fontWeight: "500" }}>{item.label}</span>
                       <span style={{ fontSize: "11px", color: T.textMeta }}>{item.range}</span>
                     </div>
@@ -1620,41 +1620,61 @@ export default function App() {
                           </div>
                         </div>
 
-                        {/* Daily cards */}
+                        {/* Daily cards — expandable */}
                         {days.map((entry, di) => {
                           const avg = calcAvg(entry.scores || {});
                           const dateObj = new Date(entry.localDate + "T12:00:00");
                           const dateLabel = dateObj.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
+                          const cardKey = `${wid}-${di}`;
+                          const isOpen = expandedHistory === cardKey;
                           return (
-                            <div key={di} style={{ marginBottom: "10px", padding: "16px 18px", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
+                            <div key={di} style={{ marginBottom: "10px", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "10px", boxShadow: "0 1px 3px rgba(0,0,0,0.04)", overflow: "hidden" }}>
+                              {/* Collapsed header — always visible, clickable */}
+                              <div
+                                onClick={() => setExpandedHistory(isOpen ? null : cardKey)}
+                                style={{ padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
+                              >
                                 <div>
                                   <div style={{ fontSize: "11px", color: T.gold, letterSpacing: "0.12em", fontWeight: "600", marginBottom: "2px" }}>{dateLabel.toUpperCase()}</div>
                                   <div style={{ fontFamily: T.fontDisplay, fontSize: "13px", color: T.textMeta, fontStyle: "italic" }}>{getScaleEntry(avg)?.label}</div>
                                 </div>
-                                <div style={{ textAlign: "right" }}>
-                                  <div style={{ fontFamily: T.fontDisplay, fontSize: "28px", color: getTierColor(avg), lineHeight: 1 }}>{avg}</div>
-                                  <div style={{ fontSize: "9px", color: getTierColor(avg), letterSpacing: "0.1em" }}>{getScaleEntry(avg)?.tier?.toUpperCase()}</div>
+                                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                                  <div style={{ textAlign: "right" }}>
+                                    <div style={{ fontFamily: T.fontDisplay, fontSize: "28px", color: getTierColor(avg), lineHeight: 1 }}>{avg}</div>
+                                    <div style={{ fontSize: "9px", color: getTierColor(avg), letterSpacing: "0.1em" }}>{getScaleEntry(avg)?.tier?.toUpperCase()}</div>
+                                  </div>
+                                  <div style={{ fontSize: "14px", color: T.textMeta, opacity: 0.5 }}>{isOpen ? "▲" : "▼"}</div>
                                 </div>
                               </div>
-                              {/* Domain score pills */}
-                              <div style={{ display: "flex", gap: "5px", flexWrap: "wrap", marginBottom: entry.note ? "12px" : 0 }}>
-                                {DOMAINS.map(d => {
-                                  const s = entry.scores?.[d.key];
-                                  if (s == null) return null;
-                                  const col = getTierColor(s);
-                                  return (
-                                    <div key={d.key} style={{ padding: "4px 9px", background: `${col}14`, border: `1px solid ${col}33`, borderRadius: "4px" }}>
-                                      <div style={{ fontSize: "9px", color: T.textMeta, letterSpacing: "0.06em" }}>{d.label}</div>
-                                      <div style={{ fontSize: "12px", color: col, fontWeight: "600", fontFamily: T.fontDisplay }}>{s}</div>
+
+                              {/* Expanded detail */}
+                              {isOpen && (
+                                <div style={{ borderTop: `1px solid ${T.goldBorder}`, padding: "20px 18px" }}>
+                                  {/* Wheel */}
+                                  <div style={{ display: "flex", justifyContent: "center", marginBottom: "20px" }}>
+                                    <PulseWheel scores={entry.scores || {}} size={260} />
+                                  </div>
+                                  {/* Domain score pills — more space */}
+                                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center", marginBottom: entry.note ? "16px" : 0 }}>
+                                    {DOMAINS.map(d => {
+                                      const s = entry.scores?.[d.key];
+                                      if (s == null) return null;
+                                      const col = getTierColor(s);
+                                      return (
+                                        <div key={d.key} style={{ padding: "8px 14px", background: `${col}14`, border: `1px solid ${col}33`, borderRadius: "6px", textAlign: "center", minWidth: "72px" }}>
+                                          <div style={{ fontSize: "9px", color: T.textMeta, letterSpacing: "0.08em", marginBottom: "3px" }}>{d.label.toUpperCase()}</div>
+                                          <div style={{ fontSize: "18px", color: col, fontWeight: "600", fontFamily: T.fontDisplay, lineHeight: 1 }}>{s}</div>
+                                          <div style={{ fontSize: "8px", color: col, opacity: 0.8, marginTop: "2px" }}>{getScaleEntry(s)?.tier}</div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                  {/* Note */}
+                                  {entry.note && (
+                                    <div style={{ borderLeft: `2px solid ${T.goldBorder}`, paddingLeft: "14px", marginTop: "4px" }}>
+                                      <p style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: "14px", fontStyle: "italic", color: T.textMeta, lineHeight: 1.65 }}>"{entry.note}"</p>
                                     </div>
-                                  );
-                                })}
-                              </div>
-                              {/* Note */}
-                              {entry.note && (
-                                <div style={{ borderLeft: `2px solid ${T.goldBorder}`, paddingLeft: "12px", marginTop: "4px" }}>
-                                  <p style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: "13px", fontStyle: "italic", color: T.textMeta, lineHeight: 1.6 }}>"{entry.note}"</p>
+                                  )}
                                 </div>
                               )}
                             </div>
