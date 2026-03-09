@@ -1138,6 +1138,9 @@ export default function App() {
           <h1 style={{ fontFamily: T.fontDisplay, fontSize: "52px", fontWeight: "300", color: T.gold, lineHeight: 1, letterSpacing: "-0.01em", margin: 0 }}>
             <span style={{ fontSize: "22px", fontWeight: "400", color: T.gold, letterSpacing: "0.01em" }}>Life OS: </span>Pulse
           </h1>
+          <div style={{ fontFamily: T.fontDisplay, fontSize: "14px", color: T.textMeta, fontStyle: "italic", marginTop: "10px", letterSpacing: "0.01em" }}>
+            Your daily check-in across the seven domains of life.
+          </div>
         </div>
 
         {/* DAILY CHECK-IN */}
@@ -1219,6 +1222,9 @@ export default function App() {
             {/* Horizon Scale card */}
             <div style={{ marginBottom: "28px", padding: "18px 22px", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "10px", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
               <SectionLabel>THE HORIZON SCALE</SectionLabel>
+              <p style={{ fontSize: "12px", color: T.textMeta, fontStyle: "italic", lineHeight: 1.6, margin: "0 0 14px", fontFamily: T.fontDisplay }}>
+                The scale you use across all seven domains. Each level describes where you recognise yourself — not where you'd like to be.
+              </p>
               {SCALE_BANDS.map(item => (
                 <div key={item.label}>
                   {item.dividerAfter ? (
@@ -1289,7 +1295,7 @@ export default function App() {
                 onMouseEnter={e => { if (weeklyStatus === "available" && !weeklyThisWeek) e.currentTarget.style.borderColor = T.goldBorderHi; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = weeklyThisWeek ? T.goldBorderHi : T.goldBorder; }}>
                 <div style={{ fontFamily: T.fontDisplay, fontSize: "18px", color: T.text, fontWeight: "600", marginBottom: "4px" }}>Weekly Pulse</div>
-                <div style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic", lineHeight: 1.5 }}>Full calibration · 7 domains</div>
+                <div style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic", lineHeight: 1.5 }}>Think of your week as a whole · 7 domains</div>
                 <div style={{ fontSize: "10px", marginTop: "8px", fontWeight: "600", color: weeklyThisWeek ? T.blue : weeklyStatus === "available" ? T.gold : T.textMeta }}>
                   {weeklyThisWeek ? `✓ Complete · ${calcAvg(weeklyThisWeek.scores)}` : weeklyStatus === "available" ? "Available now" : `Unlocks ${getWeeklyUnlockCountdown(now)}`}
                 </div>
@@ -1366,6 +1372,21 @@ export default function App() {
               <button onClick={() => setView("home")} style={{ background: "none", border: `1px solid ${T.goldBorder}`, color: T.textMeta, padding: "7px 14px", borderRadius: "4px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em", marginBottom: "16px" }}>← BACK</button>
               <div style={{ fontSize: "9px", letterSpacing: "0.3em", color: T.gold, marginBottom: "6px", fontWeight: "600" }}>WEEKLY PULSE</div>
               <div style={{ fontFamily: T.fontDisplay, fontSize: "13px", color: T.textMeta, fontStyle: "italic", marginBottom: "16px" }}>{weekLabel}</div>
+              {/* Previous week's focus — gentle reflection */}
+              {(() => {
+                const prevWeekly = (data.weekly || []).slice(-1)[0];
+                if (prevWeekly?.focusDomain) {
+                  const focusLabel = DOMAINS.find(d => d.key === prevWeekly.focusDomain)?.label;
+                  return (
+                    <div style={{ marginBottom: "20px", padding: "14px 18px", background: T.card, border: `1px solid ${T.goldBorder}`, borderLeft: `3px solid ${T.gold}`, borderRadius: "0 8px 8px 0" }}>
+                      <div style={{ fontSize: "9px", letterSpacing: "0.18em", color: T.gold, marginBottom: "6px", fontWeight: "600" }}>LAST WEEK YOU WERE FOCUSING ON</div>
+                      <div style={{ fontFamily: T.fontDisplay, fontSize: "20px", color: T.text, fontWeight: "500" }}>{focusLabel}</div>
+                      <div style={{ fontSize: "12px", color: T.textMeta, fontStyle: "italic", marginTop: "4px" }}>How did that go? You'll see it in your map.</div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
               {dailyThisWeek.length > 0 && (
                 <div style={{ fontSize: "11px", color: T.textMeta, marginBottom: "16px" }}>
                   {dailyThisWeek.length} daily check-in{dailyThisWeek.length !== 1 ? "s" : ""} this week
