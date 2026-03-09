@@ -1,0 +1,136 @@
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --gold: #C8922A; --gold-line: rgba(200,146,42,0.22); --gold-faint: rgba(200,146,42,0.07);
+  --dark: #0F1523; --body: #4A4A4A; --meta: #7A7A72; --bg: #FAFAF7;
+  --serif: 'Cormorant Garamond', Georgia, serif;
+  --serif-sc: 'Cormorant SC', Georgia, serif;
+}
+body { background: var(--bg); color: var(--body); font-family: var(--serif); font-size: 18px; line-height: 1.7; }
+.page { max-width: 820px; margin: 0 auto; padding: 72px 32px 100px; }
+.eyebrow { font-family: var(--serif-sc); font-size: 11px; letter-spacing: 0.18em; color: var(--gold); text-transform: uppercase; display: block; margin-bottom: 14px; }
+h1 { font-family: var(--serif); font-size: clamp(40px,5.5vw,64px); font-weight: 300; color: var(--gold); line-height: 1.15; letter-spacing: -0.01em; margin-bottom: 16px; }
+h2 { font-family: var(--serif); font-size: clamp(22px,3vw,30px); font-weight: 600; color: var(--dark); line-height: 1.25; margin: 56px 0 14px; }
+h3 { font-family: var(--serif); font-size: clamp(18px,2.2vw,22px); font-weight: 500; color: var(--gold); line-height: 1.3; margin: 36px 0 10px; }
+p { font-size: clamp(16px,1.8vw,18px); color: var(--body); line-height: 1.75; margin-bottom: 18px; max-width: 640px; }
+.featured { font-family: var(--serif); font-size: clamp(19px,2.4vw,24px); font-weight: 300; font-style: italic; color: var(--dark); line-height: 1.6; border-left: 3px solid var(--gold); padding: 8px 0 8px 28px; margin: 40px 0; max-width: 680px; }
+blockquote { border-left: 3px solid var(--gold); padding: 6px 0 6px 24px; margin: 28px 0; font-style: italic; color: var(--body); font-size: clamp(16px,1.8vw,18px); line-height: 1.7; max-width: 640px; }
+blockquote cite { display: block; margin-top: 10px; font-style: normal; font-family: var(--serif-sc); font-size: 11px; letter-spacing: 0.12em; color: var(--meta); }
+.rule { border: none; border-top: 1px solid var(--gold-line); margin: 56px 0; }
+.sign-off { font-family: var(--serif); font-size: clamp(18px,2.2vw,22px); font-weight: 600; font-style: italic; color: var(--dark); margin: 44px 0 8px; }
+.cta-row { display: flex; flex-wrap: wrap; gap: 32px; margin-top: 52px; padding-top: 48px; border-top: 1px solid var(--gold-line); }
+.cta-link { font-family: var(--serif-sc); font-size: 12px; letter-spacing: 0.16em; color: var(--gold); text-decoration: none; border-bottom: 1px solid rgba(200,146,42,0.35); padding-bottom: 3px; }
+.hero-rule { width: 56px; height: 1px; background: var(--gold); margin: 18px 0 36px; }
+.hero-sub { font-size: clamp(14px,1.5vw,16px); color: var(--meta); font-style: italic; margin-bottom: 8px; }
+ul.clean { list-style: none; padding: 0; margin: 0 0 20px; }
+ul.clean li { padding: 5px 0 5px 22px; position: relative; font-size: clamp(16px,1.8vw,18px); color: var(--body); max-width: 640px; line-height: 1.65; }
+ul.clean li::before { content: "—"; position: absolute; left: 0; color: var(--gold); }
+.routing-list { list-style: none; padding: 0; margin: 20px 0 28px; }
+.routing-list li { padding: 9px 0 9px 28px; position: relative; font-style: italic; color: var(--body); font-size: clamp(16px,1.8vw,18px); border-bottom: 1px solid rgba(200,146,42,0.09); max-width: 620px; }
+.routing-list li::before { content: "→"; position: absolute; left: 0; color: var(--gold); }
+.tool-card { border: 1px solid var(--gold-line); border-left: 3px solid var(--gold); padding: 28px 28px 22px; margin-bottom: 4px; background: #fff; }
+.tool-card h3 { margin-top: 0; }
+.tool-card .threshold { font-family: var(--serif-sc); font-size: 11px; letter-spacing: 0.12em; color: var(--meta); font-style: italic; margin: 10px 0 14px; }
+.tool-card .tool-cta { font-family: var(--serif-sc); font-size: 11px; letter-spacing: 0.14em; color: var(--gold); text-decoration: none; border-bottom: 1px solid rgba(200,146,42,0.3); padding-bottom: 2px; }
+.domain-grid { display: flex; flex-wrap: wrap; gap: 0 20px; margin: 20px 0 28px; }
+.domain-grid span { font-family: var(--serif-sc); font-size: 13px; letter-spacing: 0.08em; color: var(--dark); padding: 3px 0; }
+.era-block { border-left: 2px solid var(--gold-line); padding: 12px 0 12px 24px; margin: 18px 0; }
+.era-block strong { display: block; font-family: var(--serif-sc); font-size: 11px; letter-spacing: 0.12em; color: var(--gold); margin-bottom: 4px; }
+.era-block p { margin-bottom: 0; font-style: italic; font-size: 15px; }
+.episode-list { list-style: none; padding: 0; margin: 18px 0 24px; }
+.episode-list li { font-size: 16px; color: var(--body); padding: 7px 0 7px 22px; position: relative; border-bottom: 1px solid rgba(200,146,42,0.08); max-width: 580px; }
+.episode-list li::before { content: "→"; position: absolute; left: 0; color: var(--gold); }
+.proof-featured { background: var(--gold-faint); border-left: 3px solid var(--gold); padding: 28px 28px 22px; margin: 36px 0; }
+.proof-featured blockquote { border: none; padding: 0; margin: 0 0 12px; font-size: clamp(17px,2vw,20px); }
+.proof-featured cite { font-family: var(--serif-sc); font-size: 11px; letter-spacing: 0.12em; color: var(--meta); font-style: normal; }
+.testimonials-grid { margin: 32px 0; }
+.testi { border-bottom: 1px solid var(--gold-line); padding: 24px 0; max-width: 640px; }
+.testi:last-child { border-bottom: none; }
+.testi blockquote { border: none; padding: 0; font-size: 16px; margin-bottom: 8px; }
+.testi cite { font-family: var(--serif-sc); font-size: 11px; letter-spacing: 0.1em; color: var(--meta); font-style: normal; }
+.lenses { display: grid; gap: 4px; margin: 28px 0; }
+.lens { border-left: 3px solid var(--gold-line); padding: 14px 0 14px 20px; }
+.lens strong { display: block; font-family: var(--serif-sc); font-size: 12px; letter-spacing: 0.12em; color: var(--gold); margin-bottom: 4px; }
+.lens p { margin: 0; font-size: 16px; }
+.archetype-ex { background: var(--gold-faint); padding: 20px 24px; margin: 20px 0; font-style: italic; font-size: 16px; color: var(--dark); line-height: 1.65; max-width: 600px; }
+.two-ways { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 28px 0; }
+.way { border: 1px solid var(--gold-line); border-left: 3px solid var(--gold); padding: 22px 22px 18px; background: #fff; }
+.way h3 { margin-top: 0; font-size: 18px; }
+.way p { font-size: 15px; margin-bottom: 8px; }
+.pulse-rhythms { display: grid; gap: 4px; margin: 28px 0; }
+.rhythm { border-left: 3px solid var(--gold-line); padding: 16px 0 16px 22px; }
+.rhythm strong { display: block; font-family: var(--serif-sc); font-size: 12px; letter-spacing: 0.12em; color: var(--gold); margin-bottom: 6px; }
+.rhythm p { margin: 0; font-size: 16px; }
+.cta-button { display: inline-block; font-family: var(--serif-sc); font-size: 12px; letter-spacing: 0.18em; color: var(--gold); text-decoration: none; border: 1px solid rgba(200,146,42,0.5); padding: 12px 28px; margin-top: 40px; }
+.cta-buttons { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 40px; }
+@media (max-width: 640px) { .two-ways { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .page { padding: 44px 20px 76px; } .cta-row { flex-direction: column; gap: 22px; } }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Cormorant+SC:wght@300;400;500&display=swap" rel="stylesheet">
+
+<div class="page">
+
+<span class="eyebrow">Life OS · Bespoke Passage</span>
+<h1>From processing<br>to building.</h1>
+<div class="hero-rule"></div>
+<p>Some people have done the inner work. They understand themselves. They're capable of operating at a high level. And something is still not moving.</p>
+<p>Not because they haven't tried. Because what's needed now is different from what's been tried.</p>
+<p>That's the work this is for.</p>
+
+<div class="proof-featured">
+  <blockquote>Someone who will shift you out of emotional processing, analysis, or healing mode and into 'what's next, what are you building, what does your future look like' — and who treats you as someone capable of operating at a high level and holds you to that standard. Which moves you toward growth edges that have otherwise felt out of reach.</blockquote>
+  <cite>— B.G.B.</cite>
+</div>
+
+<hr class="rule">
+<h2>What this is.</h2>
+<p>Bespoke Passage is one-on-one work — built around where you actually are and what you're genuinely trying to build.</p>
+<p>Not a coaching package with a fixed structure. Not a program you move through on a predetermined timeline. A real conversation about your life, your terrain, your pattern — and what it's going to take to move from where you are to where you're capable of being.</p>
+<p>The work draws on the full ecosystem — Developmental Navigation, Life OS, Purpose Piece, Horizon Path — but what it draws on in any given engagement is determined by what's actually needed. Not by a curriculum.</p>
+
+<hr class="rule">
+<h2>What Nik brings.</h2>
+<p>The ability to see the whole terrain of your life clearly — and hold that picture steady while you're in the middle of it.</p>
+<p>A shift in orientation. From processing what's wrong to building what's next. From analysis to action. From the question of what happened to the question of what you're creating.</p>
+<p>An honest standard. Nik works with people as someone capable of operating at a high level — and holds them to that. Not harshly. Not with pressure. But with the kind of genuine expectation that moves people toward growth edges they haven't been able to reach on their own.</p>
+<p>The architecture beneath the conversation. Every session is informed by a coherent framework — Developmental Navigation, the seven domains, the threshold model. You don't need to know the framework. But it means the work is never arbitrary.</p>
+
+<blockquote>I think this is the best decision I've ever made — having you as my coach. You've helped me unlock things I thought were dead and buried long ago. It's beyond the scope of coaching now.<cite>— L.D.</cite></blockquote>
+
+<hr class="rule">
+<h2>More from the field.</h2>
+<div class="testimonials-grid">
+  <div class="testi"><blockquote>Nik really is a champion of your greatness. Working with him was truly an evolutionary experience. I felt so supported, honored and safe in his presence. He helped me learn about who I was at the core of my being — what I really wanted out of life — and how to live as the best version of myself. If you are ready to grow and start truly winning in life, I highly recommend working with Nik.</blockquote><cite>— O.W.H.</cite></div>
+  <div class="testi"><blockquote>Working with Nik definitely changed my life. He has the ability to build up the right foundation and the right container to actually be vulnerable and be able to dig deep and go straight there where you need to.</blockquote><cite>— S.H.</cite></div>
+  <div class="testi"><blockquote>Nik helped me to work these fears out for myself and work through them in a way which I felt comfortable and safe. It's changed my life.</blockquote><cite>— S.B.W.</cite></div>
+  <div class="testi"><blockquote>Highly recommend working with Nik as a coach, and getting to know him as a man. His work is profound, practical and empowering, and founded on his own high level of authenticity and integrity.</blockquote><cite>— T.H.</cite></div>
+</div>
+
+<hr class="rule">
+<h2>Who this is for.</h2>
+<ul class="clean">
+  <li>People who are high-functioning and know it — and are aware that functioning well is not the same as living fully from what they're capable of.</li>
+  <li>People who have done work on themselves — therapy, coaching, courses, practice — and find that something is still not moving. Not because they haven't tried. Because what's needed now is different from what's been tried.</li>
+  <li>People with a real horizon. Something they're building, creating, contributing to — and a felt gap between where they are and what that work requires of them.</li>
+  <li>People who are ready to be seen clearly and worked with honestly. Not managed. Not kept comfortable. Genuinely engaged.</li>
+</ul>
+
+<hr class="rule">
+<h2>Who this is not for.</h2>
+<p>This work is not for people in active crisis or looking for stabilisation — the ecosystem has other tools that serve that function better.</p>
+<p>It's not for people who want a programme to follow or a plan to execute. The work is navigational, not prescriptive.</p>
+<p>And it's not for people who aren't ready to move. Bespoke Passage is for people who are genuinely done with the loop they're in.</p>
+
+<hr class="rule">
+<h2>How it works.</h2>
+<p>Start with a discovery conversation. No commitment, no obligation — just an honest conversation about where you are and whether this is the right container for the work.</p>
+<p>If there's a genuine fit, the engagement is designed around your specific situation — the domains that need attention, the threshold you're at, the work that's actually in front of you.</p>
+<p>Engagements vary in scope and duration. Some people need a focused sprint. Others need a longer arc. That's determined by the work, not by a package.</p>
+
+<div style="margin-top:44px;padding-top:44px;border-top:1px solid var(--gold-line);">
+  <p style="font-style:italic;color:var(--meta);font-size:15px;">[Replace with your Calendly embed]</p>
+  <p style="margin-top:16px;font-size:14px;color:var(--meta);font-style:italic;">45 minutes · no cost · no obligation</p>
+</div>
+
+</div>
