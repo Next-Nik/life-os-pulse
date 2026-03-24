@@ -1,40 +1,127 @@
 import { useState, useEffect } from "react";
-
 // ============================================================
-// STORAGE LAYER
-// Currently: localStorage. Supabase swap: replace loadData +
-// saveData only — nothing else in this file needs to change.
-//
-//   import { supabase } from "./supabaseClient"
-//
-//   async function loadData() {
-//     const { data } = await supabase
-//       .from('pulse_entries').select('*')
-//       .order('created_at', { ascending: true });
-//     return data || emptyData();
-//   }
-//   async function saveData(payload) {
-//     await supabase.from('pulse_entries').upsert(payload);
-//     return true;
-//   }
+// SUPABASE STORAGE LAYER
+// Replaces localStorage. User must be signed in for data to persist.
+// Anonymous sessions fall back to localStorage automatically.
 // ============================================================
 
-const STORAGE_KEY = "life_os_pulse_v3";
+// Supabase client — imported from shared file
+// Ensure supabaseClient.js is in the same /src directory
+import { supabase, signInAnonymously, upgradeToEmail, getAccess, grantPulseTrial } from './supabaseClient';
+
+// localStorage fallback key (used when not signed in)
+const LS_KEY = "life_os_pulse_v3";
+
+async function getCurrentUserId() {
+  if (!supabase) return null;
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user?.id || null;
+  } catch { return null; }
+}
 
 function emptyData() {
   return { daily: [], weekly: [], monthly: [], quarterly: [], yearly: [] };
 }
 
+// Normalise a Supabase rows array back into the shape the app expects
+function rowsToData(rows) {
+  const data = emptyData();
+  if (!rows) return data;
+  rows.forEach(row => {
+    const cadence = row.type;
+    if (!data[cadence]) return;
+    // Reconstruct the entry shape from the stored columns
+    const entry = {
+      ...(row.scores        && { scores:       row.scores }),
+      ...(row.note          && { note:          row.note }),
+      ...(row.reflection    && { reflection:    row.reflection }),
+      ...(row.say_more      && { sayMore:        row.say_more }),
+      ...(row.focus_domain  && { focusDomain:    row.focus_domain }),
+      ...(row.agent_reflection && { agentReflection: row.agent_reflection }),
+      completedAt:  row.completed_at,
+      // Restore period identifiers
+      localDate:  row.period_id,
+      weekId:     row.period_id,
+      monthId:    row.period_id,
+      quarterId:  row.period_id,
+      yearId:     row.period_id,
+      weekLabel:  row.period_id,
+      monthLabel: row.period_id,
+    };
+    data[cadence].push(entry);
+  });
+  return data;
+}
+
 async function loadData() {
+  const userId = await getCurrentUserId();
+
+  // Signed in — load from Supabase
+  if (userId && supabase) {
+    try {
+      const { data: rows, error } = await supabase
+        .from('pulse_entries')
+        .select('*')
+        .eq('user_id', userId)
+        .order('completed_at', { ascending: true });
+
+      if (!error && rows) return rowsToData(rows);
+    } catch {}
+  }
+
+  // Not signed in or Supabase unavailable — fall back to localStorage
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(LS_KEY);
     return raw ? { ...emptyData(), ...JSON.parse(raw) } : emptyData();
   } catch { return emptyData(); }
 }
 
 async function saveData(data) {
+  const userId = await getCurrentUserId();
+
+  // Signed in — save to Supabase
+  if (userId && supabase) {
+    try {
+      // Flatten all cadences into rows
+      const rows = [];
+      const cadences = ['daily','weekly','monthly','quarterly','yearly'];
+      cadences.forEach(type => {
+        (data[type] || []).forEach(entry => {
+          const periodId =
+            entry.localDate || entry.weekId || entry.monthId ||
+            entry.quarterId || entry.yearId || new Date().toISOString().slice(0,10);
+          rows.push({
+            user_id:          userId,
+            type,
+            period_id:        periodId,
+            scores:           entry.scores           || null,
+            note:             entry.note             || null,
+            reflection:       entry.reflection       || null,
+            say_more:         entry.sayMore          || null,
+            focus_domain:     entry.focusDomain      || null,
+            agent_reflection: entry.agentReflection  || null,
+            completed_at:     entry.completedAt      || entry.timestamp || new Date().toISOString(),
+            updated_at:       new Date().toISOString(),
+          });
+        });
+      });
+
+      if (rows.length > 0) {
+        const { error } = await supabase
+          .from('pulse_entries')
+          .upsert(rows, { onConflict: 'user_id,type,period_id' });
+        if (error) throw error;
+      }
+      return true;
+    } catch (err) {
+      console.warn('Supabase save failed, falling back to localStorage:', err);
+    }
+  }
+
+  // Not signed in or Supabase failed — save to localStorage
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem(LS_KEY, JSON.stringify(data));
     return true;
   } catch { return false; }
 }
@@ -990,6 +1077,9 @@ export default function App() {
   const [data, setData]         = useState(emptyData());
   const [loading, setLoading]   = useState(true);
   const [expandedHistory, setExpandedHistory] = useState(null);
+  const [userId, setUserId]     = useState(null);
+  const [userEmail, setUserEmail] = useState(null);
+  const [showEmailCapture, setShowEmailCapture] = useState(false);
 
   // Weekly state
   const [wScores, setWScores]           = useState(Object.fromEntries(DOMAINS.map(d => [d.key, null])));
@@ -1031,8 +1121,45 @@ export default function App() {
   const insights = getInsights(data.weekly || []);
 
   useEffect(() => {
-    loadData().then(d => { setData(d); setLoading(false); });
+    async function init() {
+      // On mount: check for existing session only.
+      // Anonymous session is created on first meaningful engagement
+      // (Daily Pulse or Weekly Pulse click) — not on page load.
+      // This avoids ghost users and removes the auth/save race condition.
+      if (supabase) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            setUserId(session.user.id);
+            setUserEmail(session.user.email || null);
+          }
+        } catch {}
+      }
+      const d = await loadData();
+      setData(d);
+      setLoading(false);
+    }
+    init();
   }, []);
+
+  // ── Session creation on first meaningful engagement ───────────────────────
+  // Called before entering Daily or Weekly Pulse.
+  // Creates anonymous session only when user actually intends to use the tool.
+  async function ensureSession() {
+    if (userId) return; // already have a session
+    if (!supabase) return;
+    try {
+      const { data: anonData, error } = await supabase.auth.signInAnonymously();
+      if (error) { console.warn('[Pulse] Anonymous sign-in failed:', error.message); return; }
+      if (anonData?.user) {
+        setUserId(anonData.user.id);
+        await grantPulseTrial(anonData.user.id);
+        console.log('[Pulse] Anonymous session created:', anonData.user.id);
+      }
+    } catch (err) {
+      console.warn('[Pulse] ensureSession error:', err);
+    }
+  }
 
   // ---- Handlers ----
 
@@ -1061,8 +1188,8 @@ export default function App() {
     const newData = { ...data, daily: newDaily };
     // Write to localStorage first, verify it round-trips
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
-      const verify = localStorage.getItem(STORAGE_KEY);
+      localStorage.setItem(LS_KEY, JSON.stringify(newData));
+      const verify = localStorage.getItem(LS_KEY);
       if (!verify) throw new Error("verify failed");
     } catch (e) {
       alert("Save failed — please try again. If this keeps happening, check your browser storage settings.");
@@ -1092,6 +1219,13 @@ export default function App() {
     setWSaved(entry);
     setView("weekSaved");
     setWSaving(false);
+
+    // Prompt anonymous users to save their record after first weekly Pulse
+    const isAnonymous = !userEmail;
+    const isFirstWeekly = (data.weekly || []).length === 0;
+    if (isAnonymous && isFirstWeekly) {
+      setTimeout(() => setShowEmailCapture(true), 2000);
+    }
   }
 
   async function handleRequestReflection(entry) {
@@ -1283,7 +1417,7 @@ export default function App() {
             {/* Daily + Weekly entry cards */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "28px" }}>
               {/* Daily */}
-              <button onClick={() => setView("daily")}
+              <button onClick={async () => { await ensureSession(); setView("daily"); }}
                 style={{ padding: "20px 16px", background: T.card, border: `1px solid ${todayPulse ? T.goldBorderHi : T.goldBorder}`, borderRadius: "10px", cursor: "pointer", textAlign: "left", transition: "all 0.2s", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = T.goldBorderHi; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = todayPulse ? T.goldBorderHi : T.goldBorder; }}>
@@ -1296,7 +1430,11 @@ export default function App() {
 
               {/* Weekly */}
               <button
-                onClick={() => weeklyStatus === "available" && !weeklyThisWeek && setView("weekScan")}
+                onClick={async () => {
+                  if (weeklyStatus !== "available" || weeklyThisWeek) return;
+                  await ensureSession();
+                  setView("weekScan");
+                }}
                 style={{ padding: "20px 16px", background: T.card, border: `1px solid ${weeklyThisWeek ? T.goldBorderHi : T.goldBorder}`, borderRadius: "10px", cursor: weeklyStatus === "available" && !weeklyThisWeek ? "pointer" : "default", textAlign: "left", transition: "all 0.2s", boxShadow: "0 1px 4px rgba(0,0,0,0.05)", opacity: weeklyStatus === "locked_early" ? 0.7 : 1 }}
                 onMouseEnter={e => { if (weeklyStatus === "available" && !weeklyThisWeek) e.currentTarget.style.borderColor = T.goldBorderHi; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = weeklyThisWeek ? T.goldBorderHi : T.goldBorder; }}>
@@ -1733,6 +1871,49 @@ export default function App() {
             </div>
           );
         })()}
+
+        {/* Email capture modal — shown after first weekly Pulse for anonymous users */}
+        {showEmailCapture && (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(250,250,247,0.92)", backdropFilter: "blur(8px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+            <div style={{ background: T.card, border: `1px solid ${T.goldBorder}`, borderTop: `3px solid ${T.gold}`, borderRadius: "12px", padding: "48px 40px", maxWidth: "480px", width: "100%", textAlign: "center", boxShadow: "0 8px 40px rgba(200,146,42,0.12)" }}>
+              <div style={{ fontSize: "9px", letterSpacing: "0.22em", color: T.gold, marginBottom: "16px", fontWeight: "600" }}>SAVE YOUR RECORD</div>
+              <h2 style={{ fontFamily: T.fontDisplay, fontSize: "1.7rem", fontWeight: "300", color: T.text, lineHeight: 1.25, marginBottom: "14px" }}>
+                Save your Pulse record across devices.
+              </h2>
+              <p style={{ fontFamily: T.fontDisplay, fontSize: "1rem", fontStyle: "italic", color: T.textMeta, lineHeight: 1.8, marginBottom: "28px" }}>
+                Your first weekly Pulse is logged. Enter your email to keep your record safe and access it from any device.
+              </p>
+              <input
+                type="email"
+                id="pulse-email-input"
+                placeholder="Your email"
+                style={{ width: "100%", background: T.bg, border: `1px solid ${T.goldBorder}`, borderRadius: "8px", color: T.text, fontFamily: T.fontDisplay, fontSize: "1rem", padding: "14px 16px", outline: "none", marginBottom: "10px", textAlign: "center" }}
+              />
+              <button
+                onClick={async () => {
+                  const email = document.getElementById("pulse-email-input")?.value.trim();
+                  if (!email || !email.includes("@")) return;
+                  if (supabase) {
+                    // updateUser preserves anonymous user data — do NOT use signInWithOtp here
+                    const { error } = await supabase.auth.updateUser({ email });
+                    if (error) { console.warn('Email upgrade error:', error.message); }
+                  }
+                  setUserEmail(email);
+                  setShowEmailCapture(false);
+                }}
+                style={{ width: "100%", padding: "16px", background: T.gold, border: "none", color: "#FFF", borderRadius: "8px", cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "1.1rem", fontWeight: "500", letterSpacing: "0.05em", marginBottom: "12px" }}
+              >
+                Save my record →
+              </button>
+              <button
+                onClick={() => setShowEmailCapture(false)}
+                style={{ background: "none", border: "none", fontFamily: T.fontDisplay, fontSize: "13px", fontStyle: "italic", color: T.textMeta, cursor: "pointer", padding: "4px" }}
+              >
+                Not now
+              </button>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
