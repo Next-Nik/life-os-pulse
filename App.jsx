@@ -1186,12 +1186,9 @@ export default function App() {
       newDaily = [...(data.daily || []), { ...freshEntry, createdAt: saveTime.toISOString() }];
     }
     const newData = { ...data, daily: newDaily };
-    // Write to localStorage first, verify it round-trips
-    try {
-      localStorage.setItem(LS_KEY, JSON.stringify(newData));
-      const verify = localStorage.getItem(LS_KEY);
-      if (!verify) throw new Error("verify failed");
-    } catch (e) {
+    // Use saveData — writes to Supabase when signed in, localStorage as fallback
+    const saved = await saveData(newData);
+    if (!saved) {
       alert("Save failed — please try again. If this keeps happening, check your browser storage settings.");
       return;
     }
