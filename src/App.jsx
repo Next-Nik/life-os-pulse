@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 
 // Supabase client — imported from shared file
 // Ensure supabaseClient.js is in the same /src directory
-import { supabase, signInAnonymously, upgradeToEmail, getAccess, grantPulseTrial } from './supabaseClient';
+import { supabase, getAccess } from './supabaseClient';
 
 // localStorage fallback key (used when not signed in)
 const LS_KEY = "life_os_pulse_v3";
@@ -134,12 +134,13 @@ const T = {
   gold:         "#C8922A",   // matched to logo gold — warm, rich
   goldMid:      "#B8821A",
   goldFaint:    "rgba(200,146,42,0.10)",
-  goldBorder:   "rgba(200,146,42,0.25)",
-  goldBorderHi: "rgba(200,146,42,0.55)",
+  goldBorder:   "rgba(200,146,42,0.78)",
+  goldBorderHi: "rgba(200,146,42,1)",
+  goldBg:       "rgba(200,146,42,0.05)",   // button background
   bg:           "#FAFAF7",
   text:         "#0F1523",   // near-black dark blue — matches indigo
-  textBody:     "#2A2A2A",
-  textMeta:     "#6B6B6B",
+  textBody:     "#0F1523",
+  textMeta:     "rgba(15,21,35,0.55)",
   card:         "#FFFFFF",
   indigo:       "#0F1523",   // near-black dark blue — primary text + title
   indigoMid:    "#1C2340",   // slightly lighter for secondary uses
@@ -150,7 +151,8 @@ const T = {
   amber:        "#8A7030",
   red:          "#8A3030",
   fontDisplay:  "'Cormorant Garamond', Georgia, serif",
-  fontBody:     "Georgia, serif",
+  fontSC:       "'Cormorant SC', Georgia, serif",
+  fontBody:     "'Cormorant Garamond', Georgia, serif",  // aligned to design system
 };
 
 // ============================================================
@@ -527,7 +529,7 @@ const css = `
 // ============================================================
 
 function SectionLabel({ children }) {
-  return <div style={{ fontSize: "9px", letterSpacing: "0.2em", color: T.gold, marginBottom: "12px", fontFamily: T.fontBody, fontWeight: "600" }}>{children}</div>;
+  return <div style={{ fontSize: "13px", letterSpacing: "0.2em", color: T.gold, marginBottom: "12px", fontFamily: T.fontDisplay, fontWeight: "600" }}>{children}</div>;
 }
 
 function Divider({ margin = "28px 0" }) {
@@ -556,7 +558,7 @@ function AgentReflection({ text, loading, error }) {
   );
   if (!text) return null;
   return (
-    <div style={{ padding: "22px 24px", border: `1px solid ${T.goldBorderHi}`, borderRadius: "10px", background: T.card, borderLeft: `3px solid ${T.gold}`, boxShadow: "0 2px 8px rgba(200,146,42,0.08)" }}>
+    <div style={{ padding: "22px 24px", border: `1px solid ${T.goldBorderHi}`, borderRadius: "10px", background: T.card, borderLeft: `3px solid ${T.gold}` }}>
       <SectionLabel>YOUR REFLECTION</SectionLabel>
       <p style={{ margin: 0, fontSize: "15px", color: T.textBody, fontFamily: T.fontDisplay, fontStyle: "italic", lineHeight: 1.8 }}>{text}</p>
     </div>
@@ -785,7 +787,7 @@ function DailyCheckIn({ existing, onSave, onClose }) {
     <div>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "28px" }}>
-        <button onClick={onClose} style={{ background: "none", border: `1px solid ${T.goldBorder}`, color: T.textMeta, padding: "7px 14px", borderRadius: "4px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em" }}>← BACK</button>
+        <button onClick={onClose} style={{ background: "none", border: `1.5px solid ${T.goldBorder}`, color: T.textMeta, padding: "10px 18px", borderRadius: "40px", cursor: "pointer", fontFamily: T.fontSC, fontSize: "11px", fontWeight: "600", letterSpacing: "0.12em" }}>← BACK</button>
         <div>
           <div style={{ fontFamily: T.fontDisplay, fontSize: "26px", color: T.text, fontWeight: "400" }}>
             {isEdit ? "Update Today's Pulse" : "Check Your Pulse"}
@@ -835,7 +837,7 @@ function DailyCheckIn({ existing, onSave, onClose }) {
           </div>
 
           {/* Active domain card */}
-          <div style={{ padding: "24px 20px 28px", background: T.card, border: `1px solid ${T.goldBorderHi}`, borderRadius: "12px", boxShadow: "0 2px 8px rgba(200,146,42,0.08)" }}>
+          <div style={{ padding: "24px 20px 28px", background: T.card, border: `1.5px solid ${T.goldBorderHi}`, borderRadius: "14px" }}>
             <div style={{ textAlign: "center", marginBottom: "20px" }}>
               <div style={{ fontFamily: T.fontDisplay, fontSize: "28px", fontWeight: "600", color: T.text, marginBottom: "2px" }}>
                 {currentDomain.label}
@@ -857,7 +859,7 @@ function DailyCheckIn({ existing, onSave, onClose }) {
 
           {/* If all scored but user is reviewing — show continue */}
           {allScored && (
-            <button onClick={() => setShowNote(true)} style={{ ...{width: "100%", padding: "18px", background: T.gold, border: "none", color: "#FFFFFF", borderRadius: "8px", cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "19px", fontWeight: "500", letterSpacing: "0.06em"}, marginTop: "20px" }}>
+            <button onClick={() => setShowNote(true)} style={{ ...{width: "100%", padding: "18px", background: T.goldBg, border: `1.5px solid ${T.goldBorder}`, color: T.gold, borderRadius: "40px", cursor: "pointer", fontFamily: T.fontSC, fontSize: "13px", fontWeight: "600", letterSpacing: "0.16em"}, marginTop: "20px" }}>
               Continue →
             </button>
           )}
@@ -870,7 +872,7 @@ function DailyCheckIn({ existing, onSave, onClose }) {
             <PulseWheel scores={Object.fromEntries(DOMAINS.map(d => [d.key, scores[d.key] ?? 5]))} size={240} />
           </div>
           {/* Mini summary */}
-          <div style={{ padding: "20px", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "12px", marginBottom: "24px", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
+          <div style={{ padding: "20px", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "12px", marginBottom: "24px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
               <SectionLabel>TODAY'S SCORES</SectionLabel>
               <button onClick={() => setShowNote(false)} style={{ background: "none", border: "none", color: T.gold, fontSize: "10px", cursor: "pointer", fontFamily: T.fontBody, letterSpacing: "0.12em" }}>ADJUST →</button>
@@ -895,13 +897,13 @@ function DailyCheckIn({ existing, onSave, onClose }) {
             <SectionLabel>A NOTE FROM TODAY (optional)</SectionLabel>
             <input type="text" value={note} onChange={e => setNote(e.target.value)} maxLength={80}
               placeholder="a few words from today..."
-              style={{ width: "100%", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "8px", color: T.text, fontFamily: T.fontDisplay, fontSize: "15px", fontStyle: "italic", padding: "13px 16px", outline: "none" }}
+              style={{ width: "100%", background: T.card, border: `1.5px solid ${T.goldBorder}`, borderRadius: "40px", color: T.text, fontFamily: T.fontDisplay, fontSize: "16px", fontStyle: "italic", padding: "13px 20px", outline: "none" }}
               onFocus={e => e.currentTarget.style.borderColor = T.goldBorderHi}
               onBlur={e => e.currentTarget.style.borderColor = T.goldBorder} />
           </div>
 
           <button onClick={handleSave} disabled={saving}
-            style={{ width: "100%", padding: "18px", background: T.gold, border: "none", color: "#FFFFFF", borderRadius: "8px", cursor: saving ? "wait" : "pointer", fontFamily: T.fontDisplay, fontSize: "19px", fontWeight: "500", letterSpacing: "0.06em" }}>
+            style={{ width: "100%", padding: "16px", background: T.goldBg, border: `1.5px solid ${T.goldBorder}`, color: T.gold, borderRadius: "40px", cursor: saving ? "wait" : "pointer", fontFamily: T.fontSC, fontSize: "13px", fontWeight: "600", letterSpacing: "0.16em" }}>
             {saving ? "Saving..." : isEdit ? "Update Pulse" : "Log your Pulse for the day"}
           </button>
         </div>
@@ -919,7 +921,7 @@ function HorizonScalePicker({ domain, value, onChange }) {
   const [showInfo, setShowInfo] = useState(false);
   const selected = getScaleEntry(value);
   return (
-    <div style={{ marginBottom: "12px", border: `1px solid ${expanded ? T.goldBorderHi : T.goldBorder}`, borderRadius: "10px", overflow: "hidden", background: T.card, boxShadow: "0 1px 4px rgba(0,0,0,0.05)", position: "relative" }}>
+    <div style={{ marginBottom: "12px", border: `1px solid ${expanded ? T.goldBorderHi : T.goldBorder}`, borderRadius: "10px", overflow: "hidden", background: T.card, position: "relative" }}>
       <div onClick={() => setExpanded(!expanded)} style={{ padding: "16px 20px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px" }}>
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -992,7 +994,7 @@ function HorizonScalePicker({ domain, value, onChange }) {
 function HistoryCard({ entry, expanded, onExpand }) {
   const avg = calcAvg(entry.scores);
   return (
-    <div onClick={onExpand} style={{ border: `1px solid ${expanded ? T.goldBorderHi : T.goldBorder}`, borderRadius: "10px", overflow: "hidden", marginBottom: "10px", background: T.card, cursor: "pointer", transition: "border-color 0.2s", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
+    <div onClick={onExpand} style={{ border: `1px solid ${expanded ? T.goldBorderHi : T.goldBorder}`, borderRadius: "10px", overflow: "hidden", marginBottom: "10px", background: T.card, cursor: "pointer", transition: "border-color 0.2s" }}>
       <div style={{ padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <div style={{ fontFamily: T.fontDisplay, fontSize: "17px", color: T.text, fontWeight: "600" }}>{entry.weekLabel || formatDate(entry.date || entry.weekId)}</div>
@@ -1048,7 +1050,7 @@ function ScaffoldCard({ title, label, status, completedAt, onStart }) {
   const cfg = statusConfig[completedAt ? "completed" : status] || statusConfig.locked_early;
 
   return (
-    <div style={{ padding: "18px 20px", border: `1px solid ${cfg.action ? T.goldBorderHi : T.goldBorder}`, borderRadius: "10px", background: T.card, boxShadow: "0 1px 4px rgba(0,0,0,0.05)", marginBottom: "10px" }}>
+    <div style={{ padding: "18px 20px", border: `1px solid ${cfg.action ? T.goldBorderHi : T.goldBorder}`, borderRadius: "10px", background: T.card, marginBottom: "10px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <div style={{ fontFamily: T.fontDisplay, fontSize: "18px", fontWeight: "600", color: T.text }}>{title}</div>
@@ -1057,7 +1059,7 @@ function ScaffoldCard({ title, label, status, completedAt, onStart }) {
         <div style={{ textAlign: "right" }}>
           <div style={{ fontSize: "11px", color: cfg.color, fontWeight: "600", letterSpacing: "0.08em" }}>{cfg.text}</div>
           {cfg.action && (
-            <button onClick={onStart} style={{ marginTop: "8px", padding: "8px 16px", background: T.gold, border: "none", color: "#FFF", borderRadius: "6px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em" }}>
+            <button onClick={onStart} style={{ marginTop: "8px", padding: "10px 20px", background: T.goldBg, border: `1.5px solid ${T.goldBorder}`, color: T.gold, borderRadius: "40px", cursor: "pointer", fontFamily: T.fontSC, fontSize: "11px", fontWeight: "600", letterSpacing: "0.14em" }}>
               BEGIN →
             </button>
           )}
@@ -1122,18 +1124,23 @@ export default function App() {
 
   useEffect(() => {
     async function init() {
-      // On mount: check for existing session only.
-      // Anonymous session is created on first meaningful engagement
-      // (Daily Pulse or Weekly Pulse click) — not on page load.
-      // This avoids ghost users and removes the auth/save race condition.
+      // Auth guard — redirect to login if no session exists
       if (supabase) {
         try {
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.user) {
             setUserId(session.user.id);
             setUserEmail(session.user.email || null);
+          } else {
+            // No session — redirect to nextus.world/login
+            const returnUrl = encodeURIComponent(window.location.href);
+            window.location.href = `https://nextus.world/login?redirect=${returnUrl}`;
+            return;
           }
-        } catch {}
+        } catch (err) {
+          console.warn('[Pulse] Auth check error:', err);
+          // Fail open on network error — don't block the tool
+        }
       }
       const d = await loadData();
       setData(d);
@@ -1142,24 +1149,7 @@ export default function App() {
     init();
   }, []);
 
-  // ── Session creation on first meaningful engagement ───────────────────────
-  // Called before entering Daily or Weekly Pulse.
-  // Creates anonymous session only when user actually intends to use the tool.
-  async function ensureSession() {
-    if (userId) return; // already have a session
-    if (!supabase) return;
-    try {
-      const { data: anonData, error } = await supabase.auth.signInAnonymously();
-      if (error) { console.warn('[Pulse] Anonymous sign-in failed:', error.message); return; }
-      if (anonData?.user) {
-        setUserId(anonData.user.id);
-        await grantPulseTrial(anonData.user.id);
-        console.log('[Pulse] Anonymous session created:', anonData.user.id);
-      }
-    } catch (err) {
-      console.warn('[Pulse] ensureSession error:', err);
-    }
-  }
+  // ensureSession removed — auth now handled by login page redirect
 
   // ---- Handlers ----
 
@@ -1254,9 +1244,9 @@ export default function App() {
     </div>
   );
 
-  const btnPrimary   = { width: "100%", padding: "18px", background: T.gold, border: "none", color: "#FFFFFF", borderRadius: "8px", cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "19px", fontWeight: "500", letterSpacing: "0.06em" };
-  const btnSecondary = { width: "100%", padding: "14px", background: "none", border: `1px solid ${T.goldBorder}`, color: T.textMeta, borderRadius: "8px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "11px", letterSpacing: "0.1em" };
-  const btnAgent     = { width: "100%", padding: "16px", background: T.card, border: `1px solid ${T.goldBorderHi}`, color: T.gold, borderRadius: "8px", cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "16px", fontWeight: "500", letterSpacing: "0.05em" };
+  const btnPrimary   = { width: "100%", padding: "16px 36px", background: "rgba(200,146,42,0.05)", border: "1.5px solid rgba(200,146,42,0.78)", color: "#C8922A", borderRadius: "40px", cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "16px", fontWeight: "600", letterSpacing: "0.16em", transition: "all 0.2s" };
+  const btnSecondary = { width: "100%", padding: "16px 36px", background: "rgba(200,146,42,0.05)", border: "1.5px solid rgba(200,146,42,0.78)", color: "#C8922A", borderRadius: "40px", cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "16px", fontWeight: "600", letterSpacing: "0.16em", transition: "all 0.2s" };
+  const btnAgent     = { width: "100%", padding: "16px 36px", background: "rgba(200,146,42,0.05)", border: "1.5px solid rgba(200,146,42,0.78)", color: "#C8922A", borderRadius: "40px", cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "16px", fontWeight: "600", letterSpacing: "0.16em", transition: "all 0.2s" };
 
   return (
     <div style={{ minHeight: "100vh", background: T.bg, color: T.text, fontFamily: T.fontBody }}>
@@ -1315,7 +1305,7 @@ export default function App() {
                 </div>
               )}
               <button onClick={() => { setSavedDailyEntry(null); setView("home"); }}
-                style={{ padding: "16px 40px", background: T.gold, border: "none", color: "#FFFFFF", borderRadius: "8px", cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "18px", fontWeight: "500", letterSpacing: "0.06em" }}>
+                style={{ padding: "16px 36px", background: T.goldBg, border: `1.5px solid ${T.goldBorder}`, color: T.gold, borderRadius: "40px", cursor: "pointer", fontFamily: T.fontSC, fontSize: "13px", fontWeight: "600", letterSpacing: "0.16em" }}>
                 Done for today
               </button>
             </div>
@@ -1331,7 +1321,7 @@ export default function App() {
               const displayScores = latestWeekly?.scores || Object.fromEntries(DOMAINS.map(d => [d.key, 5]));
               const hasData = !!latestWeekly;
               return (
-                <div style={{ padding: "28px 16px 20px", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "12px", boxShadow: "0 1px 4px rgba(0,0,0,0.05)", marginBottom: "20px", textAlign: "center" }}>
+                <div style={{ padding: "28px 16px 20px", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "12px", marginBottom: "20px", textAlign: "center" }}>
                   {hasData && (
                     <div style={{ marginBottom: "6px" }}>
                       <span style={{ fontFamily: T.fontDisplay, fontSize: "13px", color: T.textMeta, fontStyle: "italic" }}>
@@ -1357,7 +1347,7 @@ export default function App() {
             })()}
 
             {/* Horizon Scale card */}
-            <div style={{ marginBottom: "28px", padding: "18px 22px", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "10px", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
+            <div style={{ marginBottom: "28px", padding: "18px 22px", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "10px" }}>
               <SectionLabel>THE HORIZON SCALE</SectionLabel>
               <p style={{ fontSize: "12px", color: T.textMeta, fontStyle: "italic", lineHeight: 1.6, margin: "0 0 14px", fontFamily: T.fontDisplay }}>
                 The scale you use across all seven domains. Each level describes where you recognise yourself — not where you'd like to be.
@@ -1390,7 +1380,7 @@ export default function App() {
             </div>
 
             {/* Weekly rhythm status */}
-            <div style={{ marginBottom: "20px", padding: "16px 20px", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "10px", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
+            <div style={{ marginBottom: "20px", padding: "16px 20px", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "10px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
                 <div>
                   <div style={{ fontSize: "10px", color: T.gold, letterSpacing: "0.18em", fontWeight: "600", marginBottom: "3px" }}>{weekLabel.toUpperCase()}</div>
@@ -1414,10 +1404,10 @@ export default function App() {
             {/* Daily + Weekly entry cards */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "28px" }}>
               {/* Daily */}
-              <button onClick={async () => { await ensureSession(); setView("daily"); }}
-                style={{ padding: "20px 16px", background: T.card, border: `1px solid ${todayPulse ? T.goldBorderHi : T.goldBorder}`, borderRadius: "10px", cursor: "pointer", textAlign: "left", transition: "all 0.2s", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = T.goldBorderHi; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = todayPulse ? T.goldBorderHi : T.goldBorder; }}>
+              <button onClick={() => setView("daily")}
+                style={{ padding: "20px 16px", background: T.card, border: `1px solid ${todayPulse ? T.goldBorderHi : T.goldBorder}`, borderRadius: "10px", cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(15,21,35,0.08)'; e.currentTarget.style.borderColor = 'rgba(200,146,42,1)'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.05)'; e.currentTarget.style.borderColor = todayPulse ? 'rgba(200,146,42,1)' : 'rgba(200,146,42,0.78)'; }}>
                 <div style={{ fontFamily: T.fontDisplay, fontSize: "18px", color: T.text, fontWeight: "600", marginBottom: "4px" }}>Daily Pulse</div>
                 <div style={{ fontSize: "11px", color: T.textMeta, fontStyle: "italic", lineHeight: 1.5 }}>7 domains · ~40 seconds</div>
                 <div style={{ fontSize: "10px", color: todayPulse ? T.blue : T.gold, marginTop: "8px", fontWeight: "600" }}>
@@ -1427,12 +1417,11 @@ export default function App() {
 
               {/* Weekly */}
               <button
-                onClick={async () => {
+                onClick={() => {
                   if (weeklyStatus !== "available" || weeklyThisWeek) return;
-                  await ensureSession();
                   setView("weekScan");
                 }}
-                style={{ padding: "20px 16px", background: T.card, border: `1px solid ${weeklyThisWeek ? T.goldBorderHi : T.goldBorder}`, borderRadius: "10px", cursor: weeklyStatus === "available" && !weeklyThisWeek ? "pointer" : "default", textAlign: "left", transition: "all 0.2s", boxShadow: "0 1px 4px rgba(0,0,0,0.05)", opacity: weeklyStatus === "locked_early" ? 0.7 : 1 }}
+                style={{ padding: "20px 16px", background: T.card, border: `1px solid ${weeklyThisWeek ? T.goldBorderHi : T.goldBorder}`, borderRadius: "10px", cursor: weeklyStatus === "available" && !weeklyThisWeek ? "pointer" : "default", textAlign: "left", transition: "all 0.2s", opacity: weeklyStatus === "locked_early" ? 0.7 : 1 }}
                 onMouseEnter={e => { if (weeklyStatus === "available" && !weeklyThisWeek) e.currentTarget.style.borderColor = T.goldBorderHi; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = weeklyThisWeek ? T.goldBorderHi : T.goldBorder; }}>
                 <div style={{ fontFamily: T.fontDisplay, fontSize: "18px", color: T.text, fontWeight: "600", marginBottom: "4px" }}>Weekly Pulse</div>
@@ -1510,7 +1499,7 @@ export default function App() {
         {view === "weekScan" && (
           <div>
             <div style={{ marginBottom: "28px" }}>
-              <button onClick={() => setView("home")} style={{ background: "none", border: `1px solid ${T.goldBorder}`, color: T.textMeta, padding: "7px 14px", borderRadius: "4px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em", marginBottom: "16px" }}>← BACK</button>
+              <button onClick={() => setView("home")} style={{ background: "rgba(200,146,42,0.05)", border: "1.5px solid rgba(200,146,42,0.78)", color: "#C8922A", padding: "10px 22px", borderRadius: "40px", cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "13px", letterSpacing: "0.12em", marginBottom: "16px", transition: "all 0.2s" }}>← BACK</button>
               <div style={{ fontSize: "9px", letterSpacing: "0.3em", color: T.gold, marginBottom: "6px", fontWeight: "600" }}>WEEKLY PULSE</div>
               <div style={{ fontFamily: T.fontDisplay, fontSize: "13px", color: T.textMeta, fontStyle: "italic", marginBottom: "16px" }}>{weekLabel}</div>
               {/* Previous week's focus — gentle reflection */}
@@ -1583,7 +1572,7 @@ export default function App() {
                   <textarea value={wSayMore[d.key]} onChange={e => setWSayMore(prev => ({ ...prev, [d.key]: e.target.value }))}
                     placeholder="What's true here this week?"
                     rows={2}
-                    style={{ width: "100%", background: T.bg, border: `1px solid ${T.goldBorder}`, borderRadius: "6px", color: T.text, fontFamily: T.fontDisplay, fontSize: "13px", fontStyle: "italic", padding: "10px 14px", outline: "none", lineHeight: 1.6, resize: "none" }}
+                    style={{ width: "100%", background: T.bg, border: `1px solid ${T.goldBorder}`, borderRadius: "14px", color: T.text, fontFamily: T.fontDisplay, fontSize: "16px", fontStyle: "italic", padding: "12px 16px", outline: "none", lineHeight: 1.6, resize: "none" }}
                     onFocus={e => { e.currentTarget.style.borderColor = T.goldBorderHi; e.currentTarget.style.background = T.card; }}
                     onBlur={e => { e.currentTarget.style.borderColor = T.goldBorder; e.currentTarget.style.background = T.bg; }} />
                 </div>
@@ -1636,7 +1625,7 @@ export default function App() {
               <textarea value={wReflection} onChange={e => setWReflection(e.target.value)}
                 placeholder="What surprises you? What doesn't? What are you ready to see clearly?"
                 rows={4}
-                style={{ width: "100%", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "8px", color: T.text, fontFamily: T.fontDisplay, fontSize: "15px", fontStyle: "italic", padding: "14px 18px", outline: "none", lineHeight: 1.65 }}
+                style={{ width: "100%", background: T.card, border: `1.5px solid ${T.goldBorder}`, borderRadius: "14px", color: T.text, fontFamily: T.fontDisplay, fontSize: "16px", fontStyle: "italic", padding: "14px 18px", outline: "none", lineHeight: 1.65 }}
                 onFocus={e => e.currentTarget.style.borderColor = T.goldBorderHi}
                 onBlur={e => e.currentTarget.style.borderColor = T.goldBorder} />
             </div>
@@ -1648,7 +1637,7 @@ export default function App() {
                   const active = wFocusDomain === d.key;
                   return (
                     <button key={d.key} onClick={() => setWFocusDomain(active ? "" : d.key)}
-                      style={{ padding: "12px 14px", background: active ? "rgba(200,146,42,0.1)" : T.card, border: `1px solid ${active ? T.goldBorderHi : T.goldBorder}`, borderRadius: "8px", color: active ? T.text : T.textMeta, cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "14px", textAlign: "left", transition: "all 0.15s", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+                      style={{ padding: "12px 14px", background: active ? "rgba(200,146,42,0.1)" : T.card, border: `1px solid ${active ? T.goldBorderHi : T.goldBorder}`, borderRadius: "8px", color: active ? T.text : T.textMeta, cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "14px", textAlign: "left", transition: "all 0.15s" }}>
                       <div style={{ fontWeight: "600" }}>{d.label}</div>
                       <div style={{ fontSize: "11px", color: getTierColor(s), marginTop: "3px", fontStyle: "italic" }}>{s} · {getScaleEntry(s)?.tier}</div>
                     </button>
@@ -1688,8 +1677,8 @@ export default function App() {
               {(agentText || agentLoading || agentError) && <AgentReflection text={agentText} loading={agentLoading} error={agentError} />}
             </div>
             <div style={{ display: "flex", gap: "12px", marginTop: "24px", justifyContent: "center" }}>
-              <button onClick={() => { resetWeekly(); setView("home"); }} style={{ padding: "13px 22px", background: T.card, border: `1px solid ${T.goldBorder}`, color: T.textMeta, borderRadius: "6px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em" }}>DONE</button>
-              <button onClick={() => setView("history")} style={{ padding: "13px 22px", background: T.gold, border: "none", color: "#FFFFFF", borderRadius: "6px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em" }}>VIEW MY RECORD</button>
+              <button onClick={() => { resetWeekly(); setView("home"); }} style={{ padding: "13px 22px", background: T.goldBg, border: `1.5px solid ${T.goldBorder}`, color: T.gold, borderRadius: "40px", cursor: "pointer", fontFamily: T.fontSC, fontSize: "11px", fontWeight: "600", letterSpacing: "0.14em" }}>DONE</button>
+              <button onClick={() => setView("history")} style={{ padding: "13px 22px", background: T.goldBg, border: `1.5px solid ${T.goldBorder}`, color: T.gold, borderRadius: "40px", cursor: "pointer", fontFamily: T.fontSC, fontSize: "11px", fontWeight: "600", letterSpacing: "0.14em" }}>VIEW MY RECORD</button>
             </div>
           </div>
         )}
@@ -1710,7 +1699,7 @@ export default function App() {
           return (
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "32px" }}>
-                <button onClick={() => setView("home")} style={{ background: T.card, border: `1px solid ${T.goldBorder}`, color: T.textMeta, padding: "7px 14px", borderRadius: "4px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em" }}>← BACK</button>
+                <button onClick={() => setView("home")} style={{ background: "none", border: `1.5px solid ${T.goldBorder}`, color: T.textMeta, padding: "10px 18px", borderRadius: "40px", cursor: "pointer", fontFamily: T.fontSC, fontSize: "11px", fontWeight: "600", letterSpacing: "0.12em" }}>← BACK</button>
                 <h2 style={{ fontFamily: T.fontDisplay, fontSize: "30px", color: T.text, fontWeight: "400", margin: 0 }}>Your Record</h2>
               </div>
 
@@ -1720,7 +1709,7 @@ export default function App() {
                 <>
                   {/* Domain trends — only when 2+ weekly entries */}
                   {(data.weekly || []).length > 1 && (
-                    <div style={{ padding: "20px 22px", border: `1px solid ${T.goldBorder}`, borderRadius: "10px", marginBottom: "24px", background: T.card, boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
+                    <div style={{ padding: "20px 22px", border: `1px solid ${T.goldBorder}`, borderRadius: "10px", marginBottom: "24px", background: T.card }}>
                       <SectionLabel>DOMAIN TRENDS</SectionLabel>
                       {DOMAINS.map(d => {
                         const values = (data.weekly || []).map(h => h.scores[d.key]);
@@ -1884,7 +1873,7 @@ export default function App() {
                 type="email"
                 id="pulse-email-input"
                 placeholder="Your email"
-                style={{ width: "100%", background: T.bg, border: `1px solid ${T.goldBorder}`, borderRadius: "8px", color: T.text, fontFamily: T.fontDisplay, fontSize: "1rem", padding: "14px 16px", outline: "none", marginBottom: "10px", textAlign: "center" }}
+                style={{ width: "100%", background: T.bg, border: `1.5px solid ${T.goldBorder}`, borderRadius: "40px", color: T.text, fontFamily: T.fontDisplay, fontSize: "16px", padding: "14px 20px", outline: "none", marginBottom: "10px", textAlign: "center" }}
               />
               <button
                 onClick={async () => {
@@ -1898,7 +1887,7 @@ export default function App() {
                   setUserEmail(email);
                   setShowEmailCapture(false);
                 }}
-                style={{ width: "100%", padding: "16px", background: T.gold, border: "none", color: "#FFF", borderRadius: "8px", cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "1.1rem", fontWeight: "500", letterSpacing: "0.05em", marginBottom: "12px" }}
+                style={{ width: "100%", padding: "16px", background: "rgba(200,146,42,0.05)", border: "1.5px solid rgba(200,146,42,0.78)", color: "#C8922A", borderRadius: "40px", cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "16px", fontWeight: "600", letterSpacing: "0.16em", marginBottom: "12px", transition: "all 0.2s" }}
               >
                 Save my record →
               </button>
