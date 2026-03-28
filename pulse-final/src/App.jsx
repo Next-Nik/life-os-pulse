@@ -1123,26 +1123,12 @@ export default function App() {
   useEffect(() => {
     async function init() {
       // Auth guard — redirect to login if no session exists
-      // 3-second timeout: if Supabase is slow, fail open rather than hang
       if (supabase) {
         try {
-          const AUTH_TIMEOUT_MS = 3000;
-          const timeoutPromise = new Promise(resolve =>
-            setTimeout(() => resolve({ timedOut: true }), AUTH_TIMEOUT_MS)
-          );
-          const sessionPromise = supabase.auth.getSession().then(({ data, error }) => ({
-            session: data?.session, error, timedOut: false
-          })).catch(e => ({ session: null, error: e, timedOut: false }));
-
-          const result = await Promise.race([sessionPromise, timeoutPromise]);
-
-          if (result.timedOut) {
-            console.warn('[Pulse] Auth check timed out — failing open.');
-          } else if (result.error) {
-            console.warn('[Pulse] Auth check error:', result.error);
-          } else if (result.session?.user) {
-            setUserId(result.session.user.id);
-            setUserEmail(result.session.user.email || null);
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            setUserId(session.user.id);
+            setUserEmail(session.user.email || null);
           } else {
             // No session — redirect to nextus.world/login
             const returnUrl = encodeURIComponent(window.location.href);
@@ -1151,7 +1137,7 @@ export default function App() {
           }
         } catch (err) {
           console.warn('[Pulse] Auth check error:', err);
-          // Fail open on unexpected error
+          // Fail open on network error — don't block the tool
         }
       }
       const d = await loadData();
