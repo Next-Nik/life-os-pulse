@@ -1122,32 +1122,53 @@ export default function App() {
 
   useEffect(() => {
     async function init() {
-      // Auth guard — redirect to login if no session exists
-      // 3-second timeout: if Supabase is slow, fail open rather than hang
+      // Auth guard — cross-domain session support + redirect to login if no session
       if (supabase) {
         try {
-          const AUTH_TIMEOUT_MS = 3000;
-          const timeoutPromise = new Promise(resolve =>
-            setTimeout(() => resolve({ timedOut: true }), AUTH_TIMEOUT_MS)
-          );
-          const sessionPromise = supabase.auth.getSession().then(({ data, error }) => ({
-            session: data?.session, error, timedOut: false
-          })).catch(e => ({ session: null, error: e, timedOut: false }));
+          // Path 1: URL token handoff from nextus.world (cross-domain)
+          const params = new URLSearchParams(window.location.search);
+          const accessToken  = params.get('sb_access');
+          const refreshToken = params.get('sb_refresh');
 
-          const result = await Promise.race([sessionPromise, timeoutPromise]);
-
-          if (result.timedOut) {
-            console.warn('[Pulse] Auth check timed out — failing open.');
-          } else if (result.error) {
-            console.warn('[Pulse] Auth check error:', result.error);
-          } else if (result.session?.user) {
-            setUserId(result.session.user.id);
-            setUserEmail(result.session.user.email || null);
+          if (accessToken && refreshToken) {
+            const { data, error } = await supabase.auth.setSession({
+              access_token:  accessToken,
+              refresh_token: refreshToken,
+            });
+            if (!error && data?.session?.user) {
+              setUserId(data.session.user.id);
+              setUserEmail(data.session.user.email || null);
+              // Clean URL
+              const clean = new URL(window.location.href);
+              clean.searchParams.delete('sb_access');
+              clean.searchParams.delete('sb_refresh');
+              window.history.replaceState({}, '', clean.toString());
+            }
           } else {
-            // No session — redirect to nextus.world/login
-            const returnUrl = encodeURIComponent(window.location.href);
-            window.location.href = `https://nextus.world/login?redirect=${returnUrl}`;
-            return;
+            // Path 2: regular getSession (same domain or existing cookie)
+            const AUTH_TIMEOUT_MS = 3000;
+            const timeoutPromise = new Promise(resolve =>
+              setTimeout(() => resolve({ timedOut: true }), AUTH_TIMEOUT_MS)
+            );
+            const sessionPromise = supabase.auth.getSession().then(({ data, error }) => ({
+              session: data?.session, error, timedOut: false
+            })).catch(e => ({ session: null, error: e, timedOut: false }));
+
+            const result = await Promise.race([sessionPromise, timeoutPromise]);
+
+            if (result.timedOut) {
+              console.warn('[Pulse] Auth check timed out — failing open.');
+            } else if (result.error) {
+              console.warn('[Pulse] Auth check error:', result.error);
+            } else if (result.session?.user) {
+              setUserId(result.session.user.id);
+              setUserEmail(result.session.user.email || null);
+            } else {
+              // No session — redirect to login
+              const returnUrl = encodeURIComponent(window.location.href);
+              window.location.href = `https://nextus.world/login.html?redirect=${returnUrl}`;
+              return;
+            }
           }
         } catch (err) {
           console.warn('[Pulse] Auth check error:', err);
@@ -1263,7 +1284,62 @@ export default function App() {
   return (
     <div style={{ minHeight: "100vh", background: T.bg, color: T.text, fontFamily: T.fontBody }}>
       <style>{css}</style>
-      <div style={{ maxWidth: "680px", margin: "0 auto", padding: "44px 24px 120px" }}>
+      <style>{`
+        .nk-nav { position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(255,255,255,0.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(200,146,42,0.20); }
+        .nk-nav-inner { max-width:1040px;margin:0 auto;padding:0 40px;display:flex;align-items:center;justify-content:space-between;height:64px; }
+        .nk-nav-logo img { height:34px;width:auto;display:block; }
+        .nk-nav-links { display:flex;align-items:center;gap:28px; }
+        .nk-nav-links a { font-family:'Cormorant SC',Georgia,serif;font-size:13px;letter-spacing:0.10em;color:rgba(15,21,35,0.78);text-decoration:none;transition:color 0.2s; }
+        .nk-nav-links a:hover { color:#0F1523; }
+        .nk-nav-links a.active { color:#C8922A; }
+        .nk-hamburger { display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;padding:4px; }
+        .nk-hamburger span { display:block;width:22px;height:1.5px;background:rgba(15,21,35,0.78);border-radius:1px; }
+        .nk-mobile-menu { display:none;flex-direction:column;background:#FFFFFF;border-bottom:1px solid rgba(200,146,42,0.20);padding:8px 0; }
+        .nk-mobile-menu.open { display:flex; }
+        .nk-mobile-menu a { font-family:'Cormorant SC',Georgia,serif;font-size:13px;letter-spacing:0.10em;color:#0F1523;text-decoration:none;padding:14px 32px;border-bottom:1px solid rgba(200,146,42,0.08); }
+        .nk-profile-dot { width:32px;height:32px;border-radius:50%;background:rgba(200,146,42,0.05);border:1.5px solid rgba(200,146,42,0.78);display:flex;align-items:center;justify-content:center;font-family:'Cormorant SC',Georgia,serif;font-size:13px;font-weight:600;color:#C8922A;text-decoration:none;flex-shrink:0;transition:all 0.2s; }
+        .nk-profile-dot:hover { background:rgba(200,146,42,0.08);border-color:rgba(200,146,42,1);transform:translateY(-1px); }
+        @media (max-width:640px) { .nk-nav-inner { padding:0 24px; } .nk-nav-links { display:none; } .nk-hamburger { display:flex; } }
+      `}</style>
+
+      {/* SITE NAV */}
+      <nav className="nk-nav">
+        <div className="nk-nav-inner">
+          <a href="https://nextus.world/index.html" className="nk-nav-logo">
+            <img src="https://nextus.world/logo_nav.png" alt="NextUs" />
+          </a>
+          <div className="nk-nav-links">
+            <a href="https://nextus.world/index.html">Home</a>
+            <a href="https://nextus.world/life-os.html" className="active">Life OS</a>
+            <a href="https://nextus.world/nextus.html">NextUs</a>
+            <a href="https://nextus.world/work-with-nik.html">Work with Nik</a>
+            <a href="https://nextus.world/about.html">About</a>
+            <a href="https://nextus.world/podcast.html">Podcast</a>
+          </div>
+          <a
+            href={userId ? "https://nextus.world/profile.html" : "https://nextus.world/login.html"}
+            className="nk-profile-dot"
+            title={userId ? "Your profile" : "Sign in"}
+          >
+            {userId && userEmail ? userEmail.split('@')[0].charAt(0).toUpperCase() : '→'}
+          </a>
+          <button className="nk-hamburger" aria-label="Menu"
+            onClick={(e) => { e.currentTarget.classList.toggle('open'); document.getElementById('nk-mob-pulse').classList.toggle('open'); }}>
+            <span/><span/><span/>
+          </button>
+        </div>
+      </nav>
+      <div id="nk-mob-pulse" className="nk-mobile-menu">
+        <a href="https://nextus.world/index.html">Home</a>
+        <a href="https://nextus.world/life-os.html">Life OS</a>
+        <a href="https://nextus.world/nextus.html">NextUs</a>
+        <a href="https://nextus.world/work-with-nik.html">Work with Nik</a>
+        <a href="https://nextus.world/about.html">About</a>
+        <a href="https://nextus.world/podcast.html">Podcast</a>
+        <a href="https://nextus.world/login.html">Sign in →</a>
+      </div>
+
+      <div style={{ maxWidth: "680px", margin: "0 auto", padding: "108px 24px 120px" }}>
 
         {/* HEADER */}
         <div style={{ marginBottom: "40px", borderBottom: `1px solid rgba(200,146,42,0.25)`, paddingBottom: "32px", textAlign: "center" }}>
