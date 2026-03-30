@@ -858,7 +858,7 @@ function DailyCheckIn({ existing, onSave, onClose }) {
           {/* If all scored but user is reviewing — show continue */}
           {allScored && (
             <button onClick={() => setShowNote(true)} style={{ ...{width: "100%", padding: "18px", background: T.gold, border: "none", color: "#FFFFFF", borderRadius: "8px", cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "19px", fontWeight: "500", letterSpacing: "0.06em"}, marginTop: "20px" }}>
-              Continue →
+              Continue &#8594;
             </button>
           )}
         </>
@@ -1058,7 +1058,7 @@ function ScaffoldCard({ title, label, status, completedAt, onStart }) {
           <div style={{ fontSize: "11px", color: cfg.color, fontWeight: "600", letterSpacing: "0.08em" }}>{cfg.text}</div>
           {cfg.action && (
             <button onClick={onStart} style={{ marginTop: "8px", padding: "8px 16px", background: T.gold, border: "none", color: "#FFF", borderRadius: "6px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em" }}>
-              BEGIN →
+              BEGIN &#8594;
             </button>
           )}
           {completedAt && <div style={{ fontSize: "10px", color: T.textMeta, marginTop: "4px" }}>{formatDate(completedAt)}</div>}
@@ -1321,7 +1321,7 @@ export default function App() {
             className="nk-profile-dot"
             title={userId ? "Your profile" : "Sign in"}
           >
-            {userId && userEmail ? userEmail.split('@')[0].charAt(0).toUpperCase() : '→'}
+            {userId && userEmail ? userEmail.split('@')[0].charAt(0).toUpperCase() : '&#8594;'}
           </a>
           <button className="nk-hamburger" aria-label="Menu"
             onClick={(e) => { e.currentTarget.classList.toggle('open'); document.getElementById('nk-mob-pulse').classList.toggle('open'); }}>
@@ -1336,7 +1336,7 @@ export default function App() {
         <a href="https://nextus.world/work-with-nik.html">Work with Nik</a>
         <a href="https://nextus.world/about.html">About</a>
         <a href="https://nextus.world/podcast.html">Podcast</a>
-        <a href="https://nextus.world/login.html">Sign in →</a>
+        <a href="https://nextus.world/login.html">Sign in &#8594;</a>
       </div>
 
       <div style={{ maxWidth: "680px", margin: "0 auto", padding: "108px 24px 120px" }}>
@@ -1345,7 +1345,7 @@ export default function App() {
         <div style={{ marginBottom: "40px", borderBottom: `1px solid rgba(200,146,42,0.25)`, paddingBottom: "32px", textAlign: "center" }}>
           <div style={{ marginBottom: "16px" }}>
             <img
-              src="/logo.png"
+              src="https://nextus.world/logo_nav.png"
               alt=""
               style={{ width: "72px", height: "72px", objectFit: "contain" }}
             />
@@ -1560,7 +1560,7 @@ export default function App() {
                   } catch { setAgentError("Monthly reflection unavailable."); }
                   setAgentLoading(false);
                 }} disabled={agentLoading} style={{ ...btnAgent, opacity: agentLoading ? 0.6 : 1 }}>
-                  {agentLoading ? "Reading your record..." : "See your monthly reflection →"}
+                  {agentLoading ? "Reading your record..." : "See your monthly reflection &#8594;"}
                 </button>
                 {(agentText || agentError) && <div style={{ marginTop: "16px" }}><AgentReflection text={agentText} loading={false} error={agentError} /></div>}
               </div>
@@ -1630,7 +1630,7 @@ export default function App() {
             ))}
             <div style={{ marginTop: "12px" }}>
               {wAllScored
-                ? <button onClick={() => setView("weekSayMore")} style={btnPrimary}>Continue →</button>
+                ? <button onClick={() => setView("weekSayMore")} style={btnPrimary}>Continue &#8594;</button>
                 : <div style={{ textAlign: "center", padding: "16px", color: T.textMeta, fontSize: "13px", fontStyle: "italic", fontFamily: T.fontDisplay }}>{DOMAINS.length - wScoredCount} domain{DOMAINS.length - wScoredCount !== 1 ? "s" : ""} remaining</div>}
             </div>
           </div>
@@ -1667,8 +1667,8 @@ export default function App() {
               );
             })}
             <div style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
-              <button onClick={() => setView("weekReveal")} style={btnPrimary}>See Your Map →</button>
-              <button onClick={() => setView("weekScan")} style={btnSecondary}>← Back to scores</button>
+              <button onClick={() => setView("weekReveal")} style={btnPrimary}>See Your Map &#8594;</button>
+              <button onClick={() => setView("weekScan")} style={btnSecondary}>&#8592; Back to scores</button>
             </div>
           </div>
         )}
@@ -1736,7 +1736,7 @@ export default function App() {
             <button onClick={handleWeeklySave} disabled={wSaving} style={{ ...btnPrimary, marginBottom: "10px", opacity: wSaving ? 0.6 : 1 }}>
               {wSaving ? "Saving..." : "Save to Your Record"}
             </button>
-            <button onClick={() => setView("weekSayMore")} style={btnSecondary}>← Adjust my assessment</button>
+            <button onClick={() => setView("weekSayMore")} style={btnSecondary}>&#8592; Adjust my assessment</button>
           </div>
         )}
 
@@ -1977,7 +1977,7 @@ export default function App() {
                 }}
                 style={{ width: "100%", padding: "16px", background: "rgba(200,146,42,0.05)", border: "1.5px solid rgba(200,146,42,0.78)", color: "#C8922A", borderRadius: "40px", cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "16px", fontWeight: "600", letterSpacing: "0.16em", marginBottom: "12px", transition: "all 0.2s" }}
               >
-                Save my record →
+                Save my record &#8594;
               </button>
               <button
                 onClick={() => setShowEmailCapture(false)}
