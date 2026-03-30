@@ -785,7 +785,7 @@ function DailyCheckIn({ existing, onSave, onClose }) {
     <div>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "28px" }}>
-        <button onClick={onClose} style={{ background: "none", border: `1px solid ${T.goldBorder}`, color: T.textMeta, padding: "7px 14px", borderRadius: "4px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em" }}>← BACK</button>
+        <button onClick={onClose} style={{ background: "none", border: `1px solid ${T.goldBorder}`, color: T.textMeta, padding: "7px 14px", borderRadius: "4px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em" }}>&#8592; BACK</button>
         <div>
           <div style={{ fontFamily: T.fontDisplay, fontSize: "26px", color: T.text, fontWeight: "400" }}>
             {isEdit ? "Update Today's Pulse" : "Check Your Pulse"}
@@ -873,7 +873,7 @@ function DailyCheckIn({ existing, onSave, onClose }) {
           <div style={{ padding: "20px", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "12px", marginBottom: "24px", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
               <SectionLabel>TODAY'S SCORES</SectionLabel>
-              <button onClick={() => setShowNote(false)} style={{ background: "none", border: "none", color: T.gold, fontSize: "10px", cursor: "pointer", fontFamily: T.fontBody, letterSpacing: "0.12em" }}>ADJUST →</button>
+              <button onClick={() => setShowNote(false)} style={{ background: "none", border: "none", color: T.gold, fontSize: "10px", cursor: "pointer", fontFamily: T.fontBody, letterSpacing: "0.12em" }}>ADJUST &#8594;</button>
             </div>
             <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
               {DOMAINS.map(d => (
@@ -954,7 +954,7 @@ function HorizonScalePicker({ domain, value, onChange }) {
       {value !== null && !expanded && (
         <div style={{ padding: "0 20px 14px", borderTop: "1px solid rgba(200,146,42,0.15)" }}>
           <p style={{ fontSize: "12px", color: T.textMeta, fontStyle: "italic", lineHeight: 1.6, margin: 0 }}>"{selected?.description}"</p>
-          <button onClick={e => { e.stopPropagation(); setExpanded(true); }} style={{ marginTop: "8px", background: "none", border: "none", color: T.gold, fontSize: "10px", cursor: "pointer", padding: 0, fontFamily: T.fontBody, letterSpacing: "0.12em" }}>CHANGE →</button>
+          <button onClick={e => { e.stopPropagation(); setExpanded(true); }} style={{ marginTop: "8px", background: "none", border: "none", color: T.gold, fontSize: "10px", cursor: "pointer", padding: 0, fontFamily: T.fontBody, letterSpacing: "0.12em" }}>CHANGE &#8594;</button>
         </div>
       )}
       {expanded && (
@@ -1587,7 +1587,7 @@ export default function App() {
         {view === "weekScan" && (
           <div>
             <div style={{ marginBottom: "28px" }}>
-              <button onClick={() => setView("home")} style={{ background: "rgba(200,146,42,0.05)", border: "1.5px solid rgba(200,146,42,0.78)", color: "#C8922A", padding: "10px 22px", borderRadius: "40px", cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "13px", letterSpacing: "0.12em", marginBottom: "16px", transition: "all 0.2s" }}>← BACK</button>
+              <button onClick={() => setView("home")} style={{ background: "rgba(200,146,42,0.05)", border: "1.5px solid rgba(200,146,42,0.78)", color: "#C8922A", padding: "10px 22px", borderRadius: "40px", cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "13px", letterSpacing: "0.12em", marginBottom: "16px", transition: "all 0.2s" }}>&#8592; BACK</button>
               <div style={{ fontSize: "9px", letterSpacing: "0.3em", color: T.gold, marginBottom: "6px", fontWeight: "600" }}>WEEKLY PULSE</div>
               <div style={{ fontFamily: T.fontDisplay, fontSize: "13px", color: T.textMeta, fontStyle: "italic", marginBottom: "16px" }}>{weekLabel}</div>
               {/* Previous week's focus — gentle reflection */}
@@ -1787,7 +1787,7 @@ export default function App() {
           return (
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "32px" }}>
-                <button onClick={() => setView("home")} style={{ background: T.card, border: `1px solid ${T.goldBorder}`, color: T.textMeta, padding: "7px 14px", borderRadius: "4px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em" }}>← BACK</button>
+                <button onClick={() => setView("home")} style={{ background: T.card, border: `1px solid ${T.goldBorder}`, color: T.textMeta, padding: "7px 14px", borderRadius: "4px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em" }}>&#8592; BACK</button>
                 <h2 style={{ fontFamily: T.fontDisplay, fontSize: "30px", color: T.text, fontWeight: "400", margin: 0 }}>Your Record</h2>
               </div>
 
