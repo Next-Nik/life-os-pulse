@@ -785,7 +785,7 @@ function DailyCheckIn({ existing, onSave, onClose }) {
     <div>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "28px" }}>
-        <button onClick={onClose} style={{ background: "none", border: `1px solid ${T.goldBorder}`, color: T.textMeta, padding: "7px 14px", borderRadius: "4px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em" }}>&#8592; BACK</button>
+        <button onClick={onClose} style={{ background: "none", border: `1px solid ${T.goldBorder}`, color: T.textMeta, padding: "7px 14px", borderRadius: "4px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em" }}>← BACK</button>
         <div>
           <div style={{ fontFamily: T.fontDisplay, fontSize: "26px", color: T.text, fontWeight: "400" }}>
             {isEdit ? "Update Today's Pulse" : "Check Your Pulse"}
@@ -858,7 +858,7 @@ function DailyCheckIn({ existing, onSave, onClose }) {
           {/* If all scored but user is reviewing — show continue */}
           {allScored && (
             <button onClick={() => setShowNote(true)} style={{ ...{width: "100%", padding: "18px", background: T.gold, border: "none", color: "#FFFFFF", borderRadius: "8px", cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "19px", fontWeight: "500", letterSpacing: "0.06em"}, marginTop: "20px" }}>
-              Continue &#8594;
+              Continue →
             </button>
           )}
         </>
@@ -873,7 +873,7 @@ function DailyCheckIn({ existing, onSave, onClose }) {
           <div style={{ padding: "20px", background: T.card, border: `1px solid ${T.goldBorder}`, borderRadius: "12px", marginBottom: "24px", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
               <SectionLabel>TODAY'S SCORES</SectionLabel>
-              <button onClick={() => setShowNote(false)} style={{ background: "none", border: "none", color: T.gold, fontSize: "10px", cursor: "pointer", fontFamily: T.fontBody, letterSpacing: "0.12em" }}>ADJUST &#8594;</button>
+              <button onClick={() => setShowNote(false)} style={{ background: "none", border: "none", color: T.gold, fontSize: "10px", cursor: "pointer", fontFamily: T.fontBody, letterSpacing: "0.12em" }}>ADJUST →</button>
             </div>
             <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
               {DOMAINS.map(d => (
@@ -954,7 +954,7 @@ function HorizonScalePicker({ domain, value, onChange }) {
       {value !== null && !expanded && (
         <div style={{ padding: "0 20px 14px", borderTop: "1px solid rgba(200,146,42,0.15)" }}>
           <p style={{ fontSize: "12px", color: T.textMeta, fontStyle: "italic", lineHeight: 1.6, margin: 0 }}>"{selected?.description}"</p>
-          <button onClick={e => { e.stopPropagation(); setExpanded(true); }} style={{ marginTop: "8px", background: "none", border: "none", color: T.gold, fontSize: "10px", cursor: "pointer", padding: 0, fontFamily: T.fontBody, letterSpacing: "0.12em" }}>CHANGE &#8594;</button>
+          <button onClick={e => { e.stopPropagation(); setExpanded(true); }} style={{ marginTop: "8px", background: "none", border: "none", color: T.gold, fontSize: "10px", cursor: "pointer", padding: 0, fontFamily: T.fontBody, letterSpacing: "0.12em" }}>CHANGE →</button>
         </div>
       )}
       {expanded && (
@@ -1058,7 +1058,7 @@ function ScaffoldCard({ title, label, status, completedAt, onStart }) {
           <div style={{ fontSize: "11px", color: cfg.color, fontWeight: "600", letterSpacing: "0.08em" }}>{cfg.text}</div>
           {cfg.action && (
             <button onClick={onStart} style={{ marginTop: "8px", padding: "8px 16px", background: T.gold, border: "none", color: "#FFF", borderRadius: "6px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em" }}>
-              BEGIN &#8594;
+              BEGIN →
             </button>
           )}
           {completedAt && <div style={{ fontSize: "10px", color: T.textMeta, marginTop: "4px" }}>{formatDate(completedAt)}</div>}
@@ -1316,13 +1316,15 @@ export default function App() {
             <a href="https://nextus.world/about.html">About</a>
             <a href="https://nextus.world/podcast.html">Podcast</a>
           </div>
-          <a
-            href={userId ? "https://nextus.world/profile.html" : "https://nextus.world/login.html"}
-            className="nk-profile-dot"
-            title={userId ? "Your profile" : "Sign in"}
-          >
-            {userId && userEmail ? userEmail.split('@')[0].charAt(0).toUpperCase() : '&#8594;'}
-          </a>
+          {userId && userEmail ? (
+            <a
+              href="https://nextus.world/profile.html"
+              className="nk-profile-dot"
+              title="Your profile"
+            >
+              {userEmail.split('@')[0].charAt(0).toUpperCase()}
+            </a>
+          ) : null}
           <button className="nk-hamburger" aria-label="Menu"
             onClick={(e) => { e.currentTarget.classList.toggle('open'); document.getElementById('nk-mob-pulse').classList.toggle('open'); }}>
             <span/><span/><span/>
@@ -1336,7 +1338,7 @@ export default function App() {
         <a href="https://nextus.world/work-with-nik.html">Work with Nik</a>
         <a href="https://nextus.world/about.html">About</a>
         <a href="https://nextus.world/podcast.html">Podcast</a>
-        <a href="https://nextus.world/login.html">Sign in &#8594;</a>
+        <a href="https://nextus.world/login.html">Sign in →</a>
       </div>
 
       <div style={{ maxWidth: "680px", margin: "0 auto", padding: "108px 24px 120px" }}>
@@ -1345,7 +1347,7 @@ export default function App() {
         <div style={{ marginBottom: "40px", borderBottom: `1px solid rgba(200,146,42,0.25)`, paddingBottom: "32px", textAlign: "center" }}>
           <div style={{ marginBottom: "16px" }}>
             <img
-              src="https://nextus.world/logo_nav.png"
+              src="/logo.png"
               alt=""
               style={{ width: "72px", height: "72px", objectFit: "contain" }}
             />
@@ -1560,7 +1562,7 @@ export default function App() {
                   } catch { setAgentError("Monthly reflection unavailable."); }
                   setAgentLoading(false);
                 }} disabled={agentLoading} style={{ ...btnAgent, opacity: agentLoading ? 0.6 : 1 }}>
-                  {agentLoading ? "Reading your record..." : "See your monthly reflection &#8594;"}
+                  {agentLoading ? "Reading your record..." : "See your monthly reflection →"}
                 </button>
                 {(agentText || agentError) && <div style={{ marginTop: "16px" }}><AgentReflection text={agentText} loading={false} error={agentError} /></div>}
               </div>
@@ -1587,7 +1589,7 @@ export default function App() {
         {view === "weekScan" && (
           <div>
             <div style={{ marginBottom: "28px" }}>
-              <button onClick={() => setView("home")} style={{ background: "rgba(200,146,42,0.05)", border: "1.5px solid rgba(200,146,42,0.78)", color: "#C8922A", padding: "10px 22px", borderRadius: "40px", cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "13px", letterSpacing: "0.12em", marginBottom: "16px", transition: "all 0.2s" }}>&#8592; BACK</button>
+              <button onClick={() => setView("home")} style={{ background: "rgba(200,146,42,0.05)", border: "1.5px solid rgba(200,146,42,0.78)", color: "#C8922A", padding: "10px 22px", borderRadius: "40px", cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "13px", letterSpacing: "0.12em", marginBottom: "16px", transition: "all 0.2s" }}>← BACK</button>
               <div style={{ fontSize: "9px", letterSpacing: "0.3em", color: T.gold, marginBottom: "6px", fontWeight: "600" }}>WEEKLY PULSE</div>
               <div style={{ fontFamily: T.fontDisplay, fontSize: "13px", color: T.textMeta, fontStyle: "italic", marginBottom: "16px" }}>{weekLabel}</div>
               {/* Previous week's focus — gentle reflection */}
@@ -1630,7 +1632,7 @@ export default function App() {
             ))}
             <div style={{ marginTop: "12px" }}>
               {wAllScored
-                ? <button onClick={() => setView("weekSayMore")} style={btnPrimary}>Continue &#8594;</button>
+                ? <button onClick={() => setView("weekSayMore")} style={btnPrimary}>Continue →</button>
                 : <div style={{ textAlign: "center", padding: "16px", color: T.textMeta, fontSize: "13px", fontStyle: "italic", fontFamily: T.fontDisplay }}>{DOMAINS.length - wScoredCount} domain{DOMAINS.length - wScoredCount !== 1 ? "s" : ""} remaining</div>}
             </div>
           </div>
@@ -1667,8 +1669,8 @@ export default function App() {
               );
             })}
             <div style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
-              <button onClick={() => setView("weekReveal")} style={btnPrimary}>See Your Map &#8594;</button>
-              <button onClick={() => setView("weekScan")} style={btnSecondary}>&#8592; Back to scores</button>
+              <button onClick={() => setView("weekReveal")} style={btnPrimary}>See Your Map →</button>
+              <button onClick={() => setView("weekScan")} style={btnSecondary}>← Back to scores</button>
             </div>
           </div>
         )}
@@ -1736,7 +1738,7 @@ export default function App() {
             <button onClick={handleWeeklySave} disabled={wSaving} style={{ ...btnPrimary, marginBottom: "10px", opacity: wSaving ? 0.6 : 1 }}>
               {wSaving ? "Saving..." : "Save to Your Record"}
             </button>
-            <button onClick={() => setView("weekSayMore")} style={btnSecondary}>&#8592; Adjust my assessment</button>
+            <button onClick={() => setView("weekSayMore")} style={btnSecondary}>← Adjust my assessment</button>
           </div>
         )}
 
@@ -1787,7 +1789,7 @@ export default function App() {
           return (
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "32px" }}>
-                <button onClick={() => setView("home")} style={{ background: T.card, border: `1px solid ${T.goldBorder}`, color: T.textMeta, padding: "7px 14px", borderRadius: "4px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em" }}>&#8592; BACK</button>
+                <button onClick={() => setView("home")} style={{ background: T.card, border: `1px solid ${T.goldBorder}`, color: T.textMeta, padding: "7px 14px", borderRadius: "4px", cursor: "pointer", fontFamily: T.fontBody, fontSize: "10px", letterSpacing: "0.12em" }}>← BACK</button>
                 <h2 style={{ fontFamily: T.fontDisplay, fontSize: "30px", color: T.text, fontWeight: "400", margin: 0 }}>Your Record</h2>
               </div>
 
@@ -1977,7 +1979,7 @@ export default function App() {
                 }}
                 style={{ width: "100%", padding: "16px", background: "rgba(200,146,42,0.05)", border: "1.5px solid rgba(200,146,42,0.78)", color: "#C8922A", borderRadius: "40px", cursor: "pointer", fontFamily: T.fontDisplay, fontSize: "16px", fontWeight: "600", letterSpacing: "0.16em", marginBottom: "12px", transition: "all 0.2s" }}
               >
-                Save my record &#8594;
+                Save my record →
               </button>
               <button
                 onClick={() => setShowEmailCapture(false)}
